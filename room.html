@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CR Space — Сессия</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; touch-action: none; }
+    body { background-color: #000; font-family: 'Montserrat', sans-serif; }
+
+    .top-bar { position: fixed; top: 0; width: 100%; display: flex; align-items: center; padding: 24px 40px; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent); }
+    .top-logo img { height: 48px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; }
+
+    /* ДЕСКТОП: обычный video */
+    .video-container { width: 100%; height: 100vh; position: relative; transition: opacity 1.5s ease; }
+    .video-container video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .video-container.fade-out { opacity: 0; }
+
+    /* МОБИЛЬНЫЙ: canvas поверх всего, video скрыт */
+    #session-canvas {
+      display: none;
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+    #mobile-video {
+      /* Не display:none — iOS не будет играть. Tiny + offscreen */
+      position: fixed;
+      top: -4px; left: -4px;
+      width: 2px; height: 2px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Оверлей — мобильный */
+    #rotate-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 100;
+      flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+    }
+    #rotate-overlay .rotate-icon { font-size: 48px; animation: rotateHint 1.5s ease-in-out infinite; }
+    #rotate-overlay .rotate-label { color: rgba(255,255,255,0.8); font-size: 11px; letter-spacing: 4px; text-transform: uppercase; }
+    #rotate-overlay .touch-label { color: rgba(255,255,255,0.4); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; margin-top: 12px; }
+    @keyframes rotateHint { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } }
+
+    /* Fullscreen кнопка — мобильный */
+    #fullscreen-btn {
+      display: none;
+      position: fixed; bottom: 20px; right: 20px; z-index: 20;
+      background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 2px; color: #fff; font-family: 'Montserrat', sans-serif;
+      font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+      cursor: pointer; padding: 8px 14px;
+    }
+
+    @media (max-width: 480px) {
+      .top-bar { padding: 16px 20px; padding-top: max(16px, env(safe-area-inset-top)); }
+      .top-logo img { height: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar" id="top-bar">
+    <div class="top-logo"><img src="logo.png" alt="CR Space"></div>
+  </div>
+
+  <!-- ДЕСКТОП: обычный плеер -->
+  <div class="video-container" id="video-container">
+    <video id="session-video" playsinline webkit-playsinline>
+      <source src="https://vz-b520b635-2e5.b-cdn.net/a798993b-967a-44e4-9942-d7467fdc7e35/original" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- МОБИЛЬНЫЙ: скрытый video (только аудио + декодер) + canvas (картинка) -->
+  <video id="mobile-video" playsinline webkit-playsinline>
+    <source src="https://vz-b520b635-2e5.b-cdn.net/a798993b-967a-44e4-9942-d7467fdc7e35/original" type="video/mp4">
+  </video>
+  <canvas id="session-canvas"></canvas>
+
+  <div id="rotate-overlay">
+    <div class="rotate-icon">📱</div>
+    <div class="rotate-label">поверните телефон горизонтально</div>
+    <div class="touch-label">прикоснись к экрану</div>
+  </div>
+
+  <button id="fullscreen-btn" onclick="goFullscreen()">⛶ полный экран</button>
+
+  <script>
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+    const MORNING_HOUR = 7;
+    const EVENING_HOUR = 20;
+
+    function getElapsedSeconds() {
+      const now = new Date();
+      const totalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      const morningSec = MORNING_HOUR * 3600;
+      const eveningSec = EVENING_HOUR * 3600;
+      if (totalSec >= morningSec && totalSec < morningSec + 3600) return totalSec - morningSec;
+      if (totalSec >= eveningSec && totalSec < eveningSec + 3600) return totalSec - eveningSec;
+      return 0;
+    }
+
+    // ─── ДЕСКТОП ────────────────────────────────────────────────────────────────
+    if (!isMobile) {
+      const video = document.getElementById('session-video');
+      const container = document.getElementById('video-container');
+
+      video.addEventListener('loadedmetadata', () => {
+        video.currentTime = getElapsedSeconds();
+        video.muted = false;
+        video.play().catch(() => {});
+      });
+      video.addEventListener('pause', () => { if (!video.ended) video.play().catch(() => {}); });
+      video.addEventListener('ended', () => {
+        sessionStorage.setItem('fromRoom', 'true');
+        container.classList.add('fade-out');
+        setTimeout(() => { window.location.href = 'end.html'; }, 1500);
+      });
+    }
+
+    // ─── МОБИЛЬНЫЙ (Canvas архитектура) ─────────────────────────────────────────
+    if (isMobile) {
+      // Скрываем десктопный контейнер
+      document.getElementById('video-container').style.display = 'none';
+
+      const video        = document.getElementById('mobile-video');
+      const canvas       = document.getElementById('session-canvas');
+      const ctx          = canvas.getContext('2d');
+      const rotateOverlay = document.getElementById('rotate-overlay');
+      const fullscreenBtn = document.getElementById('fullscreen-btn');
+      const topBar        = document.getElementById('top-bar');
+
+      // Показываем canvas
+      canvas.style.display = 'block';
+      rotateOverlay.style.display = 'flex';
+
+      // ── Canvas размер ──────────────────────────────────────────────────────────
+      function resizeCanvas() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      // ── Отрисовка кадров ───────────────────────────────────────────────────────
+      // video → canvas через requestAnimationFrame
+      // iOS Safari: ctx.drawImage(video) работает даже если video tiny/offscreen
+      let drawing = false;
+      function drawFrame() {
+        if (!drawing) return;
+        if (video.readyState >= 2) {
+          // Вычисляем как вписать видео с сохранением пропорций (object-fit: cover)
+          const vw = video.videoWidth  || canvas.width;
+          const vh = video.videoHeight || canvas.height;
+          const cw = canvas.width;
+          const ch = canvas.height;
+          const scale = Math.max(cw / vw, ch / vh);
+          const w = vw * scale;
+          const h = vh * scale;
+          const x = (cw - w) / 2;
+          const y = (ch - h) / 2;
+          ctx.drawImage(video, x, y, w, h);
+        }
+        requestAnimationFrame(drawFrame);
+      }
+
+      // ── Синхронизация ──────────────────────────────────────────────────────────
+      function applySync() {
+        const elapsed = getElapsedSeconds();
+        if (elapsed > 0) video.currentTime = elapsed;
+      }
+
+      // ── Запрет паузы ──────────────────────────────────────────────────────────
+      let recovering = false;
+      video.addEventListener('pause', () => {
+        if (video.ended || recovering) return;
+        video.play().catch(() => {});
+      });
+
+      // ── MediaSession: убираем кнопки паузы из пульта iOS ───────────────────────
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.setActionHandler('pause', () => {});
+        navigator.mediaSession.setActionHandler('stop',  () => {});
+      }
+
+      // ── Silent WAV keep-alive (30 сек цикл) ────────────────────────────────────
+      function createSilentWav() {
+        const rate = 8000, n = rate * 30;
+        const buf = new ArrayBuffer(44 + n);
+        const v = new DataView(buf);
+        const s = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+        s(0, 'RIFF'); v.setUint32(4, 36 + n, true);
+        s(8, 'WAVE'); s(12, 'fmt '); v.setUint32(16, 16, true);
+        v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+        v.setUint32(24, rate, true); v.setUint32(28, rate, true);
+        v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+        s(36, 'data'); v.setUint32(40, n, true);
+        for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+        return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+      }
+
+      // ── Watchdog: детектируем потерю аудио ────────────────────────────────────
+      // video.currentTime растёт (картинка идёт) + аудио байты стоят = аудио мертво
+      let audioUnlocked = false;
+      let lastAudioBytes = -1;
+      let lastVideoTime  = -1;
+      let audioDropTicks = 0;
+
+      setInterval(() => {
+        if (!audioUnlocked || video.paused || video.ended || recovering) return;
+        const bytes = video.webkitAudioDecodedByteCount;
+        const time  = video.currentTime;
+        if (bytes !== undefined) {
+          if (lastAudioBytes >= 0) {
+            const videoMoved = time  > lastVideoTime  + 0.5;
+            const audioMoved = bytes > lastAudioBytes;
+            if (videoMoved && !audioMoved) {
+              if (++audioDropTicks >= 2) {
+                audioDropTicks = 0; lastAudioBytes = -1;
+                // Восстановление: немедленный pause+play без задержки
+                recovering = true;
+                video.muted = false; video.volume = 1;
+                video.pause();
+                video.play().catch(() => {}).finally(() => { recovering = false; });
+              }
+            } else { audioDropTicks = 0; }
+          } else if (bytes > 0) { lastAudioBytes = bytes; }
+        }
+        lastVideoTime = time;
+      }, 1000);
+
+      // ── Ориентация ─────────────────────────────────────────────────────────────
+      function isLandscape() { return window.innerWidth > window.innerHeight; }
+
+      function checkOrientation() {
+        if (isLandscape()) {
+          // Горизонтально: обновляем оверлей на "прикоснись"
+          rotateOverlay.querySelector('.rotate-icon').textContent = '▶';
+          rotateOverlay.querySelector('.rotate-icon').style.animation = 'none';
+          rotateOverlay.querySelector('.rotate-label').textContent = 'прикоснись к экрану';
+          rotateOverlay.querySelector('.touch-label').textContent = '';
+        } else {
+          // Вертикально: просим повернуть
+          rotateOverlay.querySelector('.rotate-icon').textContent = '📱';
+          rotateOverlay.querySelector('.rotate-icon').style.animation = '';
+          rotateOverlay.querySelector('.rotate-label').textContent = 'поверните телефон горизонтально';
+          rotateOverlay.querySelector('.touch-label').textContent = 'прикоснись к экрану';
+        }
+      }
+
+      window.addEventListener('resize', () => { resizeCanvas(); checkOrientation(); });
+      checkOrientation();
+
+      // ── Запуск по касанию ──────────────────────────────────────────────────────
+      rotateOverlay.addEventListener('touchstart', () => {
+        if (!isLandscape()) return; // ещё вертикально — ждём поворота
+
+        // Keep-alive: тихий audio + AudioContext (оба запущены в контексте жеста)
+        const keepAlive = document.createElement('audio');
+        keepAlive.src = createSilentWav();
+        keepAlive.loop = true;
+        keepAlive.volume = 0.001;
+        keepAlive.play().catch(() => {});
+
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          const actx = new AC();
+          if (actx.state === 'suspended') actx.resume();
+          const gain = actx.createGain(); gain.gain.value = 0;
+          gain.connect(actx.destination);
+          const osc = actx.createOscillator(); osc.connect(gain); osc.start();
+        }
+
+        // Синхронизация времени
+        if (video.readyState >= 1) {
+          applySync();
+        } else {
+          video.addEventListener('loadedmetadata', applySync, { once: true });
+        }
+
+        // Запуск видео со звуком
+        video.muted = false;
+        video.volume = 1;
+        video.play().then(() => {
+          audioUnlocked = true;
+          drawing = true;
+          requestAnimationFrame(drawFrame);
+          rotateOverlay.style.display = 'none';
+          fullscreenBtn.style.display = 'block';
+        }).catch(() => {
+          // iOS заблокировал звук — запускаем muted, потом unmute
+          video.muted = true;
+          video.play().then(() => {
+            drawing = true;
+            requestAnimationFrame(drawFrame);
+            rotateOverlay.style.display = 'none';
+            fullscreenBtn.style.display = 'block';
+            setTimeout(() => {
+              video.muted = false;
+              video.volume = 1;
+              audioUnlocked = true;
+            }, 500);
+          }).catch(() => {});
+        });
+      }, { once: true });
+
+      // ── Fullscreen ─────────────────────────────────────────────────────────────
+      // Canvas fullscreen (Android Chrome + современные браузеры)
+      // iOS Safari: не поддерживает canvas fullscreen → fake fullscreen через CSS
+      let isFakeFullscreen = false;
+
+      window.goFullscreen = function() {
+        if (canvas.requestFullscreen) {
+          canvas.requestFullscreen().catch(() => activateFakeFullscreen());
+        } else if (canvas.webkitRequestFullscreen) {
+          canvas.webkitRequestFullscreen();
+        } else {
+          activateFakeFullscreen();
+        }
+      };
+
+      function activateFakeFullscreen() {
+        isFakeFullscreen = true;
+        topBar.style.display = 'none';
+        fullscreenBtn.textContent = '↙ свернуть';
+        fullscreenBtn.style.fontSize = '9px';
+        fullscreenBtn.style.zIndex = '1000';
+        fullscreenBtn.onclick = deactivateFakeFullscreen;
+        resizeCanvas();
+      }
+
+      function deactivateFakeFullscreen() {
+        isFakeFullscreen = false;
+        topBar.style.display = '';
+        fullscreenBtn.textContent = '⛶ полный экран';
+        fullscreenBtn.onclick = goFullscreen;
+        resizeCanvas();
+      }
+
+      // Нативный fullscreen (Android)
+      document.addEventListener('fullscreenchange', () => {
+        const isFs = !!document.fullscreenElement;
+        fullscreenBtn.textContent = isFs ? '↙ свернуть' : '⛶ полный экран';
+        fullscreenBtn.style.fontSize = '9px';
+        resizeCanvas();
+      });
+
+      // ── Конец видео ───────────────────────────────────────────────────────────
+      video.addEventListener('ended', () => {
+        drawing = false;
+        sessionStorage.setItem('fromRoom', 'true');
+        canvas.style.transition = 'opacity 1.5s ease';
+        canvas.style.opacity = '0';
+        topBar.style.transition = 'opacity 1.5s ease';
+        topBar.style.opacity = '0';
+        setTimeout(() => { window.location.href = 'end.html'; }, 1500);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CR Space — Вход</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background-color: #f5f7f7;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      padding: 40px 20px;
+    }
+    #login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-img { width: 180px; height: 180px; object-fit: contain; margin-bottom: 32px; opacity: 0.9; }
+    .tagline { font-size: 13px; color: #4a7c7e; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 60px; margin-top: 8px; font-weight: 400; }
+    .google-btn { background: transparent; border: 1px solid #4a7c7e; color: #2c4a4c; font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 4px; text-transform: uppercase; padding: 18px 48px; cursor: pointer; transition: all 0.5s ease; font-weight: 400; width: 100%; max-width: 320px; }
+    .google-btn:hover { background: #4a7c7e; color: #f5f7f7; }
+    .error-msg { margin-top: 24px; font-size: 11px; color: #c0a0a0; letter-spacing: 2px; display: none; text-transform: uppercase; }
+    #intro-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f5f7f7; z-index: 100; transition: opacity 1.2s ease; }
+    #intro-screen video { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); min-width: 100%; min-height: 100%; width: auto; height: auto; object-fit: cover; }
+    #intro-screen.fade-out { opacity: 0; pointer-events: none; }
+    @media (max-width: 480px) {
+      .logo-img { width: 140px; height: 140px; }
+      .tagline { font-size: 11px; letter-spacing: 3px; }
+      .google-btn { font-size: 11px; padding: 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="login-screen">
+    <img class="logo-img" src="logo.png" alt="CR Space">
+    <div class="tagline">пространство ясного состояния</div>
+    <button class="google-btn" onclick="signIn()">Войти через Google</button>
+    <div class="error-msg" id="error-msg">Доступ закрыт. Обратитесь к Павло.</div>
+  </div>
+  <div id="intro-screen">
+    <video id="intro-video" playsinline webkit-playsinline preload="auto"></video>
+  </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCeJzFMjr_r7gNrh1CW0RDmH9N2EwBLCxU",
+      authDomain: "crspase.firebaseapp.com",
+      projectId: "crspase",
+      storageBucket: "crspase.firebasestorage.app",
+      messagingSenderId: "153293486925",
+      appId: "1:153293486925:web:e2b64495eced034d591504"
+    };
+
+    const HORIZONTAL_VIDEO = "https://res.cloudinary.com/dnznq0mhf/video/upload/v1774950862/logo_zdkwk4.mp4";
+    const VERTICAL_VIDEO = "https://res.cloudinary.com/dnznq0mhf/video/upload/v1774967276/logovertical_ebyhcy.mp4";
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    document.getElementById('intro-video').src = isMobile ? VERTICAL_VIDEO : HORIZONTAL_VIDEO;
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    window.signIn = async function() {
+      const btn = document.querySelector('.google-btn');
+      const video = document.getElementById('intro-video');
+      const introScreen = document.getElementById('intro-screen');
+
+      // На мобильном запускаем видео ДО попапа пока жест активен
+      if (isMobile) {
+        video.muted = true;
+        video.load();
+        video.play().catch(() => {});
+      }
+
+      btn.textContent = 'Подключение...';
+      btn.disabled = true;
+
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        const result = await signInWithPopup(auth, provider);
+        const docSnap = await getDoc(doc(db, "whitelist", result.user.email));
+
+        if (docSnap.exists()) {
+          document.getElementById('login-screen').style.display = 'none';
+          introScreen.style.display = 'block';
+          if (isMobile) {
+            video.muted = false;
+            if (video.paused) video.play().catch(() => {});
+          } else {
+            video.load();
+            video.play().catch(() => {});
+          }
+          video.addEventListener('ended', () => {
+            introScreen.classList.add('fade-out');
+            setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+          });
+          setTimeout(() => {
+            if (!video.ended) { window.location.href = 'index.html'; }
+          }, 10000);
+        } else {
+          await auth.signOut();
+          video.pause();
+          const errMsg = document.getElementById('error-msg');
+          errMsg.textContent = 'Доступ закрыт. Обратитесь к Павло.';
+          errMsg.style.display = 'block';
+          btn.textContent = 'Войти через Google';
+          btn.disabled = false;
+        }
+      } catch (error) {
+        // Игнорируем закрытие попапа пользователем
+        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+          btn.textContent = 'Войти через Google';
+          btn.disabled = false;
+          return;
+        }
+        console.error(error);
+        video.pause();
+        btn.textContent = 'Войти через Google';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

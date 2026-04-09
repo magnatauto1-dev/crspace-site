@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CR Space</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background-color: #f5f7f7; color: #2c4a4c; font-family: 'Montserrat', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; padding: 40px 20px; opacity: 0; animation: fadeIn 1.5s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .logo-wrapper { position: relative; width: 160px; height: 160px; margin: 0 auto 40px; display: flex; align-items: center; justify-content: center; }
+    .breath-ring { position: absolute; top: 0; left: 0; width: 160px; height: 160px; border-radius: 50%; border: 1.5px solid #4a7c7e; animation: breathe 6s ease-in-out infinite; }
+    @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; } }
+    .logo-wrapper img { position: relative; z-index: 1; width: 90px; height: 90px; object-fit: contain; }
+    .session-label { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #4a7c7e; margin-bottom: 14px; font-weight: 500; }
+    .timer { font-size: 76px; font-weight: 300; letter-spacing: 4px; color: #2c4a4c; margin-bottom: 40px; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+    .slogan { font-size: 13px; color: #4a7c7e; letter-spacing: 5px; font-weight: 400; margin-bottom: 50px; text-transform: lowercase; }
+    .schedule { font-size: 12px; color: #4a7c7e; letter-spacing: 3px; text-transform: uppercase; line-height: 2.6; font-weight: 400; }
+    .schedule .local-time { margin-top: 12px; font-size: 11px; color: #4a7c7e; font-style: italic; letter-spacing: 2px; text-transform: none; opacity: 0.7; }
+    .music-btn { position: fixed; bottom: 24px; right: 32px; background: transparent; border: none; color: #4a7c7e; font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; opacity: 0.7; }
+    .music-btn:hover { opacity: 1; }
+    .join-block { display: none; flex-direction: column; align-items: center; }
+    .join-label { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #4a7c7e; margin-bottom: 32px; font-weight: 400; }
+    .join-btn { background: transparent; border: 1px solid #4a7c7e; color: #2c4a4c; font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 5px; text-transform: uppercase; padding: 18px 52px; cursor: pointer; transition: all 0.5s ease; font-weight: 400; width: 100%; max-width: 320px; }
+    .join-btn:hover { background: #4a7c7e; color: #f5f7f7; }
+    @media (max-width: 480px) {
+      .timer { font-size: 52px; letter-spacing: 2px; }
+      .logo-wrapper { width: 120px; height: 120px; }
+      .breath-ring { width: 120px; height: 120px; }
+      .logo-wrapper img { width: 68px; height: 68px; }
+      .music-btn { bottom: 16px; right: 20px; font-size: 9px; }
+      .join-btn { padding: 16px 32px; font-size: 11px; }
+      .session-label { font-size: 11px; }
+      .slogan { font-size: 11px; }
+      .schedule { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <audio id="bg-music" loop><source src="music.mp3" type="audio/mp3"></audio>
+
+  <div id="waiting-block">
+    <div class="logo-wrapper" ondblclick="window.location.href='room.html'" style="cursor:default;">
+      <div class="breath-ring"></div>
+      <img src="logo.png" alt="CR Space">
+    </div>
+    <div class="session-label" id="session-name">утренняя практика начнётся через</div>
+    <div class="timer" id="timer">00:00:00</div>
+    <div class="slogan">calm · inspire · run</div>
+    <div class="schedule">
+      <div>утренняя практика — 07:00</div>
+      <div>вечерняя практика — 20:00</div>
+      <div class="local-time">по местному времени</div>
+    </div>
+  </div>
+
+  <div class="join-block" id="join-block">
+    <div class="logo-wrapper">
+      <div class="breath-ring"></div>
+      <img src="logo.png" alt="CR Space">
+    </div>
+    <div class="join-label" id="active-session-name">практика началась</div>
+    <button class="join-btn" onclick="window.location.href='room.html'">Присоединиться</button>
+  </div>
+
+  <button class="music-btn" id="music-btn" onclick="toggleMusic()">♪ выключить музыку</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCeJzFMjr_r7gNrh1CW0RDmH9N2EwBLCxU",
+      authDomain: "crspase.firebaseapp.com",
+      projectId: "crspase",
+      storageBucket: "crspase.firebasestorage.app",
+      messagingSenderId: "153293486925",
+      appId: "1:153293486925:web:e2b64495eced034d591504"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href = 'login.html'; return; }
+      const docRef = doc(db, "whitelist", user.email);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) { await auth.signOut(); window.location.href = 'login.html'; }
+    });
+
+    const music = document.getElementById('bg-music');
+    const musicBtn = document.getElementById('music-btn');
+    music.volume = 0.3;
+
+    let musicStarted = false;
+
+    function tryPlayMusic() {
+      if (musicStarted) return;
+      music.play().then(() => {
+        musicStarted = true;
+        musicBtn.textContent = '♪ выключить музыку';
+        document.removeEventListener('touchstart', tryPlayMusic);
+        document.removeEventListener('click', tryPlayMusic);
+      }).catch(() => {
+        musicBtn.textContent = '♪ включить музыку';
+      });
+    }
+
+    tryPlayMusic();
+    document.addEventListener('touchstart', tryPlayMusic);
+    document.addEventListener('click', tryPlayMusic);
+
+    window.toggleMusic = function() {
+      const btn = document.getElementById('music-btn');
+      if (music.paused) { music.play(); btn.textContent = '♪ выключить музыку'; }
+      else { music.pause(); btn.textContent = '♪ включить музыку'; }
+    }
+
+    const MORNING_HOUR = 7;
+    const EVENING_HOUR = 20;
+    const SESSION_DURATION = 60;
+
+    function getStatus() {
+      const now = new Date();
+      const totalMinutes = now.getHours() * 60 + now.getMinutes();
+      const morningStart = MORNING_HOUR * 60;
+      const eveningStart = EVENING_HOUR * 60;
+      if (totalMinutes >= morningStart && totalMinutes < morningStart + SESSION_DURATION)
+        return { active: true, name: "утренняя практика" };
+      if (totalMinutes >= eveningStart && totalMinutes < eveningStart + SESSION_DURATION)
+        return { active: true, name: "вечерняя практика" };
+      return { active: false };
+    }
+
+    function getNextSession() {
+      const now = new Date();
+      const morning = new Date(); morning.setHours(MORNING_HOUR, 0, 0, 0);
+      const evening = new Date(); evening.setHours(EVENING_HOUR, 0, 0, 0);
+      if (now < morning) return { time: morning, name: "утренняя практика" };
+      if (now < evening) return { time: evening, name: "вечерняя практика" };
+      const tomorrow = new Date(morning);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return { time: tomorrow, name: "утренняя практика" };
+    }
+
+    function update() {
+      const status = getStatus();
+      if (status.active) {
+        document.getElementById('waiting-block').style.display = 'none';
+        document.getElementById('join-block').style.display = 'flex';
+        document.getElementById('active-session-name').textContent = status.name + ' началась';
+      } else {
+        document.getElementById('waiting-block').style.display = 'block';
+        document.getElementById('join-block').style.display = 'none';
+        const next = getNextSession();
+        const diff = next.time - new Date();
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('timer').textContent =
+          String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        document.getElementById('session-name').textContent = next.name + ' начнётся через';
+      }
+    }
+
+    update();
+    setInterval(update, 1000);
+  </script>
+</body>
+</html>

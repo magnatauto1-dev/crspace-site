@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CR Space — Сессия завершена</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background-color: #f5f7f7;
+      color: #2c4a4c;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      opacity: 0;
+      animation: fadeIn 1.5s ease forwards;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .logo-wrapper {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      margin: 0 auto 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .breath-ring {
+      position: absolute;
+      top: 0; left: 0;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      border: 1.5px solid #4a7c7e;
+      animation: breathe 6s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+    .logo-wrapper img {
+      position: relative;
+      z-index: 1;
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+    }
+    .message {
+      max-width: 420px;
+      margin-bottom: 32px;
+    }
+    .message p {
+      font-size: 15px;
+      color: #9ab8b9;
+      letter-spacing: 2px;
+      font-weight: 300;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeIn 1.5s ease forwards;
+    }
+    .message p.accent {
+      color: #2c4a4c;
+      font-size: 18px;
+      letter-spacing: 3px;
+      font-weight: 400;
+      margin-bottom: 32px;
+      animation-delay: 1s;
+    }
+    .message p:nth-child(2) { animation-delay: 4s; }
+    .message p:nth-child(3) { animation-delay: 7s; }
+    .message p:nth-child(4) { animation-delay: 10s; }
+    .slogan {
+      font-size: 11px;
+      color: #4a7c7e;
+      letter-spacing: 5px;
+      font-weight: 400;
+      text-transform: lowercase;
+      opacity: 0;
+      animation: fadeIn 1.5s ease forwards;
+      animation-delay: 13s;
+    }
+    .music-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 32px;
+      background: transparent;
+      border: none;
+      color: #4a7c7e;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    .music-btn:hover { opacity: 1; }
+    @media (max-width: 480px) {
+      .logo-wrapper { width: 120px; height: 120px; }
+      .breath-ring { width: 120px; height: 120px; }
+      .logo-wrapper img { width: 68px; height: 68px; }
+      .message p { font-size: 13px; }
+      .message p.accent { font-size: 16px; }
+      .music-btn { bottom: 16px; right: 20px; font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <audio id="bg-music" loop><source src="music.mp3" type="audio/mp3"></audio>
+
+  <div class="logo-wrapper">
+    <div class="breath-ring"></div>
+    <img src="logo.png" alt="CR Space">
+  </div>
+
+  <div class="message">
+    <p class="accent">Поблагодари себя за практику</p>
+    <p>Выдохни и осознай тишину ума</p>
+    <p>Ощути спокойное тело</p>
+    <p>Это время — для тебя</p>
+  </div>
+
+  <div class="slogan">calm · inspire · run</div>
+
+  <button class="music-btn" id="music-btn" onclick="toggleMusic()">♪ выключить музыку</button>
+
+  <script>
+    const music = document.getElementById('bg-music');
+    const btn = document.getElementById('music-btn');
+    music.volume = 0.3;
+
+    music.play().then(() => {
+      btn.textContent = '♪ выключить музыку';
+    }).catch(() => {
+      btn.textContent = '♪ включить музыку';
+    });
+
+    window.toggleMusic = function() {
+      if (music.paused) {
+        music.play();
+        btn.textContent = '♪ выключить музыку';
+      } else {
+        music.pause();
+        btn.textContent = '♪ включить музыку';
+      }
+    }
+  </script>
+</body>
+</html>
