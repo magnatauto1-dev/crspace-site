@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CR Space — Практика</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background-color: #f5f7f7;
+      color: #2c4a4c;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      opacity: 0;
+      animation: fadeIn 1.5s ease forwards;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .logo-wrapper {
+      position: relative;
+      width: 160px; height: 160px;
+      margin: 0 auto 48px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .breath-ring {
+      position: absolute; top: 0; left: 0;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      border: 1.5px solid #4a7c7e;
+      animation: breathe 6s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+    .logo-wrapper img {
+      position: relative; z-index: 1;
+      width: 90px; height: 90px; object-fit: contain;
+    }
+
+    .practice-title {
+      font-size: 15px;
+      color: #2c4a4c;
+      letter-spacing: 3px;
+      font-weight: 400;
+      margin-bottom: 48px;
+      text-transform: uppercase;
+    }
+
+    .progress-wrap {
+      width: 240px;
+      margin: 0 auto 48px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 1px;
+      background: rgba(74, 124, 126, 0.2);
+    }
+    .progress-fill {
+      height: 100%;
+      background: #4a7c7e;
+      width: 0%;
+      transition: width 1s linear;
+    }
+    .progress-time {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      font-size: 10px;
+      color: #4a7c7e;
+      letter-spacing: 2px;
+      opacity: 0.5;
+    }
+
+    .back-btn {
+      position: fixed;
+      top: 24px;
+      left: 24px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #4a7c7e;
+      opacity: 0.6;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.3s ease;
+    }
+    .back-btn:hover { opacity: 1; }
+
+    .slogan {
+      font-size: 11px;
+      color: #4a7c7e;
+      letter-spacing: 5px;
+      font-weight: 400;
+      text-transform: lowercase;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 480px) {
+      .logo-wrapper { width: 120px; height: 120px; margin-bottom: 32px; }
+      .breath-ring { width: 120px; height: 120px; }
+      .logo-wrapper img { width: 68px; height: 68px; }
+      .progress-wrap { width: 200px; }
+      .practice-title { font-size: 13px; text-transform: uppercase; }
+    }
+  </style>
+</head>
+<body>
+  <button class="back-btn" onclick="window.location.href='index.html'">← назад</button>
+
+  <div class="logo-wrapper">
+    <div class="breath-ring"></div>
+    <img src="logo.png" alt="CR Space">
+  </div>
+
+  <div class="practice-title">пространство внутри тебя</div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress-time">
+      <span id="time-current">00:00</span>
+      <span id="time-total">00:00</span>
+    </div>
+  </div>
+
+  <div class="slogan">calm · inspire · run</div>
+
+  <audio id="audio-track" preload="auto"></audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script type="module">
+    const userId = sessionStorage.getItem('tg_user_id');
+    if (!userId) { window.location.href = 'login.html'; }
+
+    const params = new URLSearchParams(window.location.search);
+    const track = params.get('track');
+
+    const tracks = {
+      '25': { src: 'https://vz-b520b635-2e5.b-cdn.net/72fa54fd-0137-46b9-857a-911d1bb064d5/playlist.m3u8' },
+      '40': { src: 'https://vz-b520b635-2e5.b-cdn.net/96783e22-1a80-4e28-b5a6-e8196ae65f33/playlist.m3u8' }
+    };
+
+    const selected = tracks[track] || tracks['25'];
+    const audio = document.getElementById('audio-track');
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function initAudio(src) {
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(src);
+        hls.attachMedia(audio);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          audio.play().catch(() => {});
+        });
+      } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari нативно поддерживает HLS
+        audio.src = src;
+        audio.addEventListener('loadedmetadata', () => {
+          audio.play().catch(() => {});
+        });
+      }
+    }
+
+    initAudio(selected.src);
+
+    audio.addEventListener('loadedmetadata', () => {
+      document.getElementById('time-total').textContent = formatTime(audio.duration);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) {
+        const pct = (audio.currentTime / audio.duration) * 100;
+        document.getElementById('progress-fill').style.width = pct + '%';
+        document.getElementById('time-current').textContent = formatTime(audio.currentTime);
+        audio._lastTime = audio.currentTime;
+      }
+    });
+
+    audio.addEventListener('seeking', () => {
+      if (Math.abs(audio.currentTime - (audio._lastTime || 0)) > 2) {
+        audio.currentTime = audio._lastTime || 0;
+      }
+    });
+
+    audio.addEventListener('ended', () => {
+      sessionStorage.setItem('fromRoom', 'true');
+      window.location.href = 'end.html';
+    });
+  </script>
+</body>
+</html>

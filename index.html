@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
+<head><link rel="manifest" href="manifest.json">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CR Space</title>
@@ -9,31 +9,47 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background-color: #f5f7f7; color: #2c4a4c; font-family: 'Montserrat', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; padding: 40px 20px; opacity: 0; animation: fadeIn 1.5s ease forwards; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .logo-wrapper { position: relative; width: 160px; height: 160px; margin: 0 auto 40px; display: flex; align-items: center; justify-content: center; }
+
+    .logo-wrapper { position: relative; width: 160px; height: 160px; margin: 0 auto 32px; display: flex; align-items: center; justify-content: center; }
     .breath-ring { position: absolute; top: 0; left: 0; width: 160px; height: 160px; border-radius: 50%; border: 1.5px solid #4a7c7e; animation: breathe 6s ease-in-out infinite; }
     @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; } }
     .logo-wrapper img { position: relative; z-index: 1; width: 90px; height: 90px; object-fit: contain; }
-    .session-label { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #4a7c7e; margin-bottom: 14px; font-weight: 500; }
-    .timer { font-size: 76px; font-weight: 300; letter-spacing: 4px; color: #2c4a4c; margin-bottom: 40px; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
-    .slogan { font-size: 13px; color: #4a7c7e; letter-spacing: 5px; font-weight: 400; margin-bottom: 50px; text-transform: lowercase; }
-    .schedule { font-size: 12px; color: #4a7c7e; letter-spacing: 3px; text-transform: uppercase; line-height: 2.6; font-weight: 400; }
-    .schedule .local-time { margin-top: 12px; font-size: 11px; color: #4a7c7e; font-style: italic; letter-spacing: 2px; text-transform: none; opacity: 0.7; }
-    .music-btn { position: fixed; bottom: 24px; right: 32px; background: transparent; border: none; color: #4a7c7e; font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; opacity: 0.7; }
+
+    .practice-type { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: #2c4a4c; margin-bottom: 10px; font-weight: 500; }
+    .session-label { font-size: 10px; letter-spacing: 2px; font-style: italic; color: #4a7c7e; margin-bottom: 12px; font-weight: 400; opacity: 0.9; }
+    .timer { font-size: 48px; font-weight: 300; letter-spacing: 4px; color: #4a7c7e; opacity: 0.22; margin-bottom: 40px; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+    .divider { width: 40px; height: 1px; background: #4a7c7e; opacity: 0.2; margin: 0 auto 28px; }
+
+    .audio-section { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 36px; }
+    .audio-title { font-size: 11px; color: #2c4a4c; letter-spacing: 4px; text-transform: uppercase; font-weight: 500; margin-bottom: 2px; }
+    .audio-hint { font-size: 10px; color: #4a7c7e; letter-spacing: 2px; font-style: italic; opacity: 0.9; margin-bottom: 10px; }
+    .audio-link { font-size: 11px; color: #4a7c7e; letter-spacing: 3px; text-transform: uppercase; text-decoration: none; font-weight: 400; opacity: 0.9; transition: opacity 0.3s ease; padding-bottom: 2px; border-bottom: 1px solid transparent; }
+    .audio-link:hover { opacity: 1; border-bottom-color: rgba(74,124,126,0.4); }
+
+    .slogan { font-size: 12px; color: #4a7c7e; letter-spacing: 5px; font-weight: 400; text-transform: lowercase; opacity: 0.7; margin-bottom: 20px; }
+
+    .schedule-mini { font-size: 9px; color: #4a7c7e; letter-spacing: 2px; text-transform: uppercase; opacity: 0.3; line-height: 2.2; text-align: center; }
+
+    .music-btn { position: fixed; bottom: 24px; right: 32px; background: transparent; border: none; color: #4a7c7e; font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; opacity: 0.7; transition: opacity 0.3s ease; }
     .music-btn:hover { opacity: 1; }
+    .music-btn.pulsing { animation: pulseBtn 2s ease-in-out infinite; }
+    @keyframes pulseBtn { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+
     .join-block { display: none; flex-direction: column; align-items: center; }
-    .join-label { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #4a7c7e; margin-bottom: 32px; font-weight: 400; }
+    .join-label { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #2c4a4c; margin-bottom: 32px; font-weight: 400; }
     .join-btn { background: transparent; border: 1px solid #4a7c7e; color: #2c4a4c; font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 5px; text-transform: uppercase; padding: 18px 52px; cursor: pointer; transition: all 0.5s ease; font-weight: 400; width: 100%; max-width: 320px; }
     .join-btn:hover { background: #4a7c7e; color: #f5f7f7; }
+
     @media (max-width: 480px) {
-      .timer { font-size: 52px; letter-spacing: 2px; }
-      .logo-wrapper { width: 120px; height: 120px; }
+      body { padding-bottom: 60px; }
+      .timer { font-size: 34px; letter-spacing: 2px; }
+      .logo-wrapper { width: 120px; height: 120px; margin-bottom: 24px; }
       .breath-ring { width: 120px; height: 120px; }
       .logo-wrapper img { width: 68px; height: 68px; }
       .music-btn { bottom: 16px; right: 20px; font-size: 9px; }
       .join-btn { padding: 16px 32px; font-size: 11px; }
-      .session-label { font-size: 11px; }
-      .slogan { font-size: 11px; }
-      .schedule { font-size: 11px; }
+      .audio-link { font-size: 10px; }
     }
   </style>
 </head>
@@ -45,13 +61,24 @@
       <div class="breath-ring"></div>
       <img src="logo.png" alt="CR Space">
     </div>
+    <div class="practice-type">практика тела и дыхания</div>
     <div class="session-label" id="session-name">утренняя практика начнётся через</div>
     <div class="timer" id="timer">00:00:00</div>
+
+    <div class="divider"></div>
+
+    <div class="audio-section">
+      <div class="audio-title">медитация в сопровождении</div>
+      <div class="audio-hint">выбери свою - когда будешь готов</div>
+      <a class="audio-link" href="audio.html?track=25">практика · 25 минут</a>
+      <a class="audio-link" href="audio.html?track=40">практика · 40 минут</a>
+    </div>
+
     <div class="slogan">calm · inspire · run</div>
-    <div class="schedule">
-      <div>утренняя практика — 07:00</div>
-      <div>вечерняя практика — 20:00</div>
-      <div class="local-time">по местному времени</div>
+
+    <div class="schedule-mini">
+      <div>07:00 утренняя · 20:00 вечерняя</div>
+      <div>по местному времени</div>
     </div>
   </div>
 
@@ -64,59 +91,44 @@
     <button class="join-btn" onclick="window.location.href='room.html'">Присоединиться</button>
   </div>
 
-  <button class="music-btn" id="music-btn" onclick="toggleMusic()">♪ выключить музыку</button>
+  <button class="music-btn pulsing" id="music-btn" onclick="toggleMusic()">♪ включить музыку</button>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCeJzFMjr_r7gNrh1CW0RDmH9N2EwBLCxU",
-      authDomain: "crspase.firebaseapp.com",
-      projectId: "crspase",
-      storageBucket: "crspase.firebasestorage.app",
-      messagingSenderId: "153293486925",
-      appId: "1:153293486925:web:e2b64495eced034d591504"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) { window.location.href = 'login.html'; return; }
-      const docRef = doc(db, "whitelist", user.email);
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) { await auth.signOut(); window.location.href = 'login.html'; }
-    });
+    const userId = sessionStorage.getItem('tg_user_id');
+    if (!userId) { window.location.href = 'login.html'; }
 
     const music = document.getElementById('bg-music');
     const musicBtn = document.getElementById('music-btn');
-    music.volume = 0.3;
-
+    music.volume = 0.15;
     let musicStarted = false;
 
-    function tryPlayMusic() {
-      if (musicStarted) return;
+    music.play().then(() => {
+      musicStarted = true;
+      musicBtn.textContent = '♪ выключить музыку';
+      musicBtn.classList.remove('pulsing');
+    }).catch(() => {});
+
+    document.addEventListener('touchstart', function onFirstTouch() {
+      if (musicStarted) { document.removeEventListener('touchstart', onFirstTouch); return; }
       music.play().then(() => {
         musicStarted = true;
         musicBtn.textContent = '♪ выключить музыку';
-        document.removeEventListener('touchstart', tryPlayMusic);
-        document.removeEventListener('click', tryPlayMusic);
-      }).catch(() => {
-        musicBtn.textContent = '♪ включить музыку';
-      });
-    }
-
-    tryPlayMusic();
-    document.addEventListener('touchstart', tryPlayMusic);
-    document.addEventListener('click', tryPlayMusic);
+        musicBtn.classList.remove('pulsing');
+      }).catch(() => {});
+      document.removeEventListener('touchstart', onFirstTouch);
+    }, { passive: true });
 
     window.toggleMusic = function() {
-      const btn = document.getElementById('music-btn');
-      if (music.paused) { music.play(); btn.textContent = '♪ выключить музыку'; }
-      else { music.pause(); btn.textContent = '♪ включить музыку'; }
+      if (music.paused) {
+        music.play();
+        musicBtn.textContent = '♪ выключить музыку';
+        musicBtn.classList.remove('pulsing');
+        musicStarted = true;
+      } else {
+        music.pause();
+        musicBtn.textContent = '♪ включить музыку';
+        musicBtn.classList.add('pulsing');
+      }
     }
 
     const MORNING_HOUR = 7;

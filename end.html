@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <link rel="manifest" href="manifest.json">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CR Space — Сессия завершена</title>
@@ -100,13 +101,38 @@
       opacity: 0.7;
     }
     .music-btn:hover { opacity: 1; }
+
     @media (max-width: 480px) {
-      .logo-wrapper { width: 120px; height: 120px; }
+      .logo-wrapper { width: 120px; height: 120px; margin-bottom: 24px; }
       .breath-ring { width: 120px; height: 120px; }
       .logo-wrapper img { width: 68px; height: 68px; }
-      .message p { font-size: 13px; }
-      .message p.accent { font-size: 16px; }
+      .message p { font-size: 13px; margin-bottom: 14px; }
+      .message p.accent { font-size: 16px; margin-bottom: 20px; }
       .music-btn { bottom: 16px; right: 20px; font-size: 9px; }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+      body {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        padding: 20px 40px;
+      }
+      .logo-wrapper { width: 100px; height: 100px; margin: 0; flex-shrink: 0; }
+      .breath-ring { width: 100px; height: 100px; }
+      .logo-wrapper img { width: 58px; height: 58px; }
+      .content-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+      }
+      .message { margin-bottom: 16px; }
+      .message p { font-size: 12px; margin-bottom: 10px; }
+      .message p.accent { font-size: 14px; margin-bottom: 16px; }
+      .slogan { font-size: 10px; }
+      .music-btn { bottom: 12px; right: 16px; font-size: 9px; }
     }
   </style>
 </head>
@@ -118,27 +144,34 @@
     <img src="logo.png" alt="CR Space">
   </div>
 
-  <div class="message">
-    <p class="accent">Поблагодари себя за практику</p>
-    <p>Выдохни и осознай тишину ума</p>
-    <p>Ощути спокойное тело</p>
-    <p>Это время — для тебя</p>
+  <div class="content-right">
+    <div class="message">
+      <p class="accent">Поблагодари себя за практику</p>
+      <p>Выдохни и осознай тишину ума</p>
+      <p>Ощути спокойное тело</p>
+      <p>Это время — для тебя</p>
+    </div>
+    <div class="slogan">calm · inspire · run</div>
   </div>
-
-  <div class="slogan">calm · inspire · run</div>
 
   <button class="music-btn" id="music-btn" onclick="toggleMusic()">♪ выключить музыку</button>
 
   <script>
     const music = document.getElementById('bg-music');
     const btn = document.getElementById('music-btn');
-    music.volume = 0.3;
+    music.volume = 0.15;
 
-    music.play().then(() => {
-      btn.textContent = '♪ выключить музыку';
-    }).catch(() => {
+    const fromRoom = sessionStorage.getItem('fromRoom');
+    if (fromRoom === 'true') {
+      sessionStorage.removeItem('fromRoom');
+      music.play().then(() => {
+        btn.textContent = '♪ выключить музыку';
+      }).catch(() => {
+        btn.textContent = '♪ включить музыку';
+      });
+    } else {
       btn.textContent = '♪ включить музыку';
-    });
+    }
 
     window.toggleMusic = function() {
       if (music.paused) {

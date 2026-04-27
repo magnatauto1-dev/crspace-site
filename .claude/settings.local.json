@@ -4,7 +4,13 @@
       "Bash(pip3 install:*)",
       "Bash(python3 -m markitdown \"/Users/pavelrudometov/Library/Application Support/Claude/local-agent-mode-sessions/466de465-294a-4d90-ae70-af2bc6d62bfc/71a4201c-e082-4238-853c-4e4c5f74931c/local_ffe21e4c-5cf1-4d15-b02d-8984bb1f30f7/outputs/cr_space.pptx\")",
       "Bash(python3 -c \"from markitdown import MarkItDown; md = MarkItDown\\(\\); result = md.convert\\(''/Users/pavelrudometov/Library/Application Support/Claude/local-agent-mode-sessions/466de465-294a-4d90-ae70-af2bc6d62bfc/71a4201c-e082-4238-853c-4e4c5f74931c/local_ffe21e4c-5cf1-4d15-b02d-8984bb1f30f7/outputs/cr_space.pptx''\\); print\\(result.text_content\\)\")",
-      "Bash(python3 -c \"import markitdown; print\\(markitdown.__version__\\)\")"
+      "Bash(python3 -c \"import markitdown; print\\(markitdown.__version__\\)\")",
+      "Bash(netlify status:*)",
+      "Bash(TZ='Europe/Kiev' date +\"%H:%M\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git remote:*)"
     ]
   }
 }
