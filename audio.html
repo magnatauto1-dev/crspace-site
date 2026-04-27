@@ -139,10 +139,20 @@
 
   <audio id="audio-track" preload="auto"></audio>
 
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script type="module">
-    const userId = sessionStorage.getItem('tg_user_id');
-    if (!userId) { window.location.href = 'login.html'; }
+    // Берём userId из sessionStorage или из Telegram WebApp
+    let userId = sessionStorage.getItem('tg_user_id');
+    if (!userId) {
+      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      if (tgUser) {
+        userId = String(tgUser.id);
+        sessionStorage.setItem('tg_user_id', userId);
+      } else {
+        window.location.href = 'login.html';
+      }
+    }
 
     const params = new URLSearchParams(window.location.search);
     const track = params.get('track');
