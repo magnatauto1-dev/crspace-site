@@ -116,7 +116,7 @@
   </style>
 </head>
 <body>
-  <button class="back-btn" onclick="window.location.href='index.html'">← назад</button>
+  <button class="back-btn" onclick="goBack()">← назад</button>
 
   <div class="logo-wrapper">
     <div class="breath-ring"></div>
@@ -171,12 +171,20 @@
       return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
 
+    let hlsInstance = null;
+
+    window.goBack = function() {
+      audio.pause();
+      if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+      window.location.href = 'index.html';
+    };
+
     function initAudio(src) {
       if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(src);
-        hls.attachMedia(audio);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        hlsInstance = new Hls();
+        hlsInstance.loadSource(src);
+        hlsInstance.attachMedia(audio);
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
           audio.play().catch(() => {});
         });
       } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
