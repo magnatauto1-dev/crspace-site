@@ -1,0 +1,13 @@
+{
+  "name": "crspace-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0",
+    "node-cron": "^3.0.3",
+    "firebase-admin": "^12.0.0"
+  }
+}
