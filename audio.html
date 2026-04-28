@@ -176,7 +176,7 @@
     window.goBack = function() {
       audio.pause();
       if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
-      window.location.href = 'index.html';
+      history.back();
     };
 
     function initAudio(src) {
