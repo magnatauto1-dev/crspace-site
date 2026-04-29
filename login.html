@@ -7,6 +7,13 @@
   <title>CR Space — Вход</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    setTimeout(function() {
+      if (sessionStorage.getItem('tg_user_id')) {
+        window.location.href = 'index.html';
+      }
+    }, 6000);
+  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -101,7 +108,7 @@
 
       let docSnap;
       try {
-        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
         docSnap = await Promise.race([getDoc(doc(db, "whitelist", userId)), timeout]);
       } catch (e) {
         window.location.href = 'index.html';
