@@ -51,7 +51,7 @@
   </style>
 </head>
 <body>
-  <div id="status-screen">
+  <div id="status-screen" style="display:none;">
     <img class="logo-img" src="logo.png" alt="CR Space">
     <div class="tagline">пространство ясного состояния</div>
     <div class="error-msg" id="error-msg">Доступ закрыт. Обратитесь к Павло.</div>
@@ -101,7 +101,8 @@
 
       let docSnap;
       try {
-        docSnap = await getDoc(doc(db, "whitelist", userId));
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+        docSnap = await Promise.race([getDoc(doc(db, "whitelist", userId)), timeout]);
       } catch (e) {
         window.location.href = 'index.html';
         return;
