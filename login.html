@@ -92,7 +92,7 @@
 
     if (!tgUser) {
       // Открыто не через Telegram
-      document.getElementById('status-msg').style.display = 'none';
+      document.getElementById('status-screen').style.display = 'flex';
       document.getElementById('error-msg').style.display = 'block';
       document.getElementById('error-msg').textContent = 'Откройте через Telegram бот @cr_space_bot';
     } else {
@@ -117,7 +117,7 @@
         }, 15000);
       } else {
         // Нет в вайтлисте
-        document.getElementById('status-msg').style.display = 'none';
+        document.getElementById('status-screen').style.display = 'flex';
         document.getElementById('error-msg').style.display = 'block';
       }
     }
