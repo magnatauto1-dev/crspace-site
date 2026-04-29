@@ -51,7 +51,7 @@
   </style>
 </head>
 <body>
-  <div id="status-screen" style="display:none;">
+  <div id="status-screen">
     <img class="logo-img" src="logo.png" alt="CR Space">
     <div class="tagline">пространство ясного состояния</div>
     <div class="error-msg" id="error-msg">Доступ закрыт. Обратитесь к Павло.</div>
@@ -99,7 +99,13 @@
       const userId = String(tgUser.id);
       sessionStorage.setItem('tg_user_id', userId);
 
-      const docSnap = await getDoc(doc(db, "whitelist", userId));
+      let docSnap;
+      try {
+        docSnap = await getDoc(doc(db, "whitelist", userId));
+      } catch (e) {
+        window.location.href = 'index.html';
+        return;
+      }
       if (docSnap.exists()) {
         // Доступ разрешён — играем анимацию логотипа
         document.getElementById('status-screen').style.display = 'none';
