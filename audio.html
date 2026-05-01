@@ -196,6 +196,13 @@
       }
     }
 
+    // Логируем старт медитации
+    fetch('https://crspace-bot-production.up.railway.app/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, type: track === '40' ? 'meditation_40' : 'meditation_25' })
+    }).catch(() => {});
+
     initAudio(selected.src);
 
     audio.addEventListener('loadedmetadata', () => {

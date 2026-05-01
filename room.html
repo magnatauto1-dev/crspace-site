@@ -150,6 +150,19 @@
     const MORNING_HOUR = 7;
     const EVENING_HOUR = 20;
 
+    // Логируем вход в практику в записи
+    async function logVideoEntry() {
+      try {
+        const now = new Date();
+        const session = now.getHours() < 12 ? 'morning' : 'evening';
+        await fetch('https://crspace-bot-production.up.railway.app/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, type: 'video_recording', session })
+        });
+      } catch (e) {}
+    }
+
     function getCorrectTime() {
       const now = new Date();
       const total = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
@@ -162,6 +175,7 @@
 
     // ── ДЕСКТОП ──
     if (!isMobile) {
+      logVideoEntry();
       const video = document.getElementById('session-video');
       const container = document.getElementById('video-container');
       video.addEventListener('loadedmetadata', () => {
@@ -198,6 +212,7 @@
       document.getElementById('mobile-entry').addEventListener('touchstart', () => {
         if (started) return;
         started = true;
+        logVideoEntry();
 
         const correct = getCorrectTime();
         video.muted = false;
@@ -322,6 +337,7 @@
       document.getElementById('mobile-entry').addEventListener('touchstart', () => {
         if (started) return;
         started = true;
+        logVideoEntry();
         launchFullscreen();
       }, { once: true });
 
