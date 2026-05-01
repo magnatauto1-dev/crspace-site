@@ -116,7 +116,7 @@
   </style>
 </head>
 <body>
-  <button class="back-btn" onclick="goBack()">← назад</button>
+  <button class="back-btn" id="finish-btn" onclick="finishPractice()">Завершить</button>
 
   <div class="logo-wrapper">
     <div class="breath-ring"></div>
@@ -177,6 +177,23 @@
       audio.pause();
       if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
       history.back();
+    };
+
+    window.finishPractice = async function() {
+      audio.pause();
+      if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+      try {
+        await fetch('https://crspace-bot-production.up.railway.app/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, type: 'meditation_done', track })
+        });
+      } catch (e) {}
+      if (window.Telegram?.WebApp?.close) {
+        window.Telegram.WebApp.close();
+      } else {
+        history.back();
+      }
     };
 
     function initAudio(src) {
