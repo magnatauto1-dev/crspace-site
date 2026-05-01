@@ -36,9 +36,7 @@
     .music-btn.pulsing { animation: pulseBtn 2s ease-in-out infinite; }
     @keyframes pulseBtn { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
 
-    .join-block { display: none; flex-direction: column; align-items: center; }
-    .join-label { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #2c4a4c; margin-bottom: 32px; font-weight: 400; }
-    .join-btn { background: transparent; border: 1px solid #4a7c7e; color: #2c4a4c; font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 5px; text-transform: uppercase; padding: 18px 52px; cursor: pointer; transition: all 0.5s ease; font-weight: 400; width: 100%; max-width: 320px; }
+    .join-btn { display: none; background: transparent; border: 1px solid #4a7c7e; color: #2c4a4c; font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 5px; text-transform: uppercase; padding: 18px 52px; cursor: pointer; transition: all 0.5s ease; font-weight: 400; width: 100%; max-width: 320px; margin-bottom: 40px; }
     .join-btn:hover { background: #4a7c7e; color: #f5f7f7; }
 
     @media (max-width: 480px) {
@@ -64,6 +62,7 @@
     <div class="practice-type">практика тела и дыхания</div>
     <div class="session-label" id="session-name">утренняя практика начнётся через</div>
     <div class="timer" id="timer">00:00:00</div>
+    <button class="join-btn" id="join-btn" onclick="window.location.href='room.html'">Присоединиться</button>
 
     <div class="divider"></div>
 
@@ -80,15 +79,6 @@
       <div>07:00 утренняя · 20:00 вечерняя</div>
       <div>по местному времени</div>
     </div>
-  </div>
-
-  <div class="join-block" id="join-block">
-    <div class="logo-wrapper">
-      <div class="breath-ring"></div>
-      <img src="logo.png" alt="CR Space">
-    </div>
-    <div class="join-label" id="active-session-name">практика началась</div>
-    <button class="join-btn" onclick="window.location.href='room.html'">Присоединиться</button>
   </div>
 
   <button class="music-btn pulsing" id="music-btn" onclick="toggleMusic()">♪ включить музыку</button>
@@ -160,21 +150,25 @@
 
     function update() {
       const status = getStatus();
+      const timer = document.getElementById('timer');
+      const joinBtn = document.getElementById('join-btn');
+      const sessionName = document.getElementById('session-name');
+
       if (status.active) {
-        document.getElementById('waiting-block').style.display = 'none';
-        document.getElementById('join-block').style.display = 'flex';
-        document.getElementById('active-session-name').textContent = status.name + ' началась';
+        timer.style.display = 'none';
+        joinBtn.style.display = 'block';
+        sessionName.textContent = status.name + ' идёт сейчас';
       } else {
-        document.getElementById('waiting-block').style.display = 'block';
-        document.getElementById('join-block').style.display = 'none';
+        timer.style.display = 'block';
+        joinBtn.style.display = 'none';
         const next = getNextSession();
         const diff = next.time - new Date();
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
         const s = Math.floor((diff % 60000) / 1000);
-        document.getElementById('timer').textContent =
+        timer.textContent =
           String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-        document.getElementById('session-name').textContent = next.name + ' начнётся через';
+        sessionName.textContent = next.name + ' начнётся через';
       }
     }
 
