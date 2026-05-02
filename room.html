@@ -5,6 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>CR Space — Сессия</title>
+  <link rel="preconnect" href="https://vz-b520b635-2e5.b-cdn.net" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -71,7 +74,6 @@
       opacity: 0.85;
     }
 
-    /* Android — видео на весь экран через CSS */
     #android-video-wrap {
       display: none;
       position: fixed;
@@ -93,9 +95,7 @@
     <div class="top-logo"><img src="logo.png" alt="CR Space"></div>
   </div>
   <div id="video-container">
-    <video id="session-video" playsinline webkit-playsinline>
-      <source src="https://vz-b520b635-2e5.b-cdn.net/62982d3e-5c90-4d41-9193-b2f633f00443/original" type="video/mp4">
-    </video>
+    <video id="session-video" playsinline webkit-playsinline preload="none"></video>
     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></div>
   </div>
 
@@ -127,21 +127,22 @@
     <div class="entry-hint">коснись экрана<br>чтобы вернуться</div>
   </div>
 
-  <!-- iOS видео -->
-  <video id="mobile-video" style="position:fixed;display:none;width:1px;height:1px;opacity:0;z-index:1;">
-    <source src="https://vz-b520b635-2e5.b-cdn.net/62982d3e-5c90-4d41-9193-b2f633f00443/original" type="video/mp4">
+  <!-- iOS видео — нативный HLS Safari -->
+  <video id="mobile-video" preload="none" style="position:fixed;display:none;width:1px;height:1px;opacity:0;z-index:1;">
+    <source src="https://vz-b520b635-2e5.b-cdn.net/62982d3e-5c90-4d41-9193-b2f633f00443/playlist.m3u8" type="application/x-mpegURL">
   </video>
 
   <!-- Android видео -->
   <div id="android-video-wrap">
-    <video id="android-video" playsinline>
-      <source src="https://vz-b520b635-2e5.b-cdn.net/62982d3e-5c90-4d41-9193-b2f633f00443/original" type="video/mp4">
-    </video>
+    <video id="android-video" playsinline preload="none"></video>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script type="module">
     const userId = sessionStorage.getItem('tg_user_id');
     if (!userId) { window.location.href = 'login.html'; }
+
+    const HLS_SRC = 'https://vz-b520b635-2e5.b-cdn.net/62982d3e-5c90-4d41-9193-b2f633f00443/playlist.m3u8';
 
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
@@ -150,7 +151,6 @@
     const MORNING_HOUR = 7;
     const EVENING_HOUR = 20;
 
-    // Логируем вход в практику в записи
     async function logVideoEntry() {
       try {
         const now = new Date();
@@ -173,16 +173,29 @@
       return 0;
     }
 
+    function attachHls(video, onReady) {
+      if (Hls.isSupported()) {
+        const hls = new Hls({ startLevel: -1, capLevelToPlayerSize: true });
+        hls.loadSource(HLS_SRC);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, onReady);
+        return hls;
+      }
+      return null;
+    }
+
     // ── ДЕСКТОП ──
     if (!isMobile) {
       logVideoEntry();
       const video = document.getElementById('session-video');
       const container = document.getElementById('video-container');
-      video.addEventListener('loadedmetadata', () => {
+
+      attachHls(video, () => {
         video.currentTime = getCorrectTime();
         video.muted = false;
         video.play().catch(() => {});
       });
+
       video.addEventListener('seeking', () => {
         const correct = getCorrectTime();
         if (correct > 0 && Math.abs(video.currentTime - correct) > 2) video.currentTime = correct;
@@ -208,37 +221,34 @@
       const wrap = document.getElementById('android-video-wrap');
       const returnEntry = document.getElementById('return-entry');
       let started = false;
+      let hlsInstance = null;
 
       document.getElementById('mobile-entry').addEventListener('touchstart', () => {
         if (started) return;
         started = true;
         logVideoEntry();
 
-        const correct = getCorrectTime();
         video.muted = false;
         video.volume = 1;
 
         const doLaunch = () => {
+          const correct = getCorrectTime();
           if (correct > 0) video.currentTime = correct;
           video.play().catch(() => {});
           document.getElementById('mobile-entry').style.display = 'none';
           wrap.style.display = 'block';
-
-          // Запрашиваем fullscreen для Android
-          if (wrap.requestFullscreen) {
-            wrap.requestFullscreen().catch(() => {});
-          }
+          if (wrap.requestFullscreen) wrap.requestFullscreen().catch(() => {});
         };
 
-        if (video.readyState >= 1) {
-          doLaunch();
-        } else {
+        hlsInstance = attachHls(video, doLaunch);
+        if (!hlsInstance) {
+          // fallback — нет hls.js поддержки
+          video.src = HLS_SRC;
           video.addEventListener('loadedmetadata', doLaunch, { once: true });
           video.load();
         }
       }, { once: true });
 
-      // При выходе из fullscreen на Android
       document.addEventListener('fullscreenchange', () => {
         if (!document.fullscreenElement && !video.ended) {
           returnEntry.style.display = 'flex';
@@ -256,31 +266,21 @@
         const correct = getCorrectTime();
         if (correct > 0 && Math.abs(video.currentTime - correct) > 2) video.currentTime = correct;
       });
-
       video.addEventListener('pause', () => {
         if (!video.ended) {
-          setTimeout(() => {
-            video.muted = false;
-            video.volume = 1;
-            video.play().catch(() => {});
-          }, 300);
+          setTimeout(() => { video.muted = false; video.volume = 1; video.play().catch(() => {}); }, 300);
         }
       });
-
       video.addEventListener('volumechange', () => {
-        if (video.muted && !video.ended) {
-          video.muted = false;
-          video.volume = 1;
-        }
+        if (video.muted && !video.ended) { video.muted = false; video.volume = 1; }
       });
-
       video.addEventListener('ended', () => {
         sessionStorage.setItem('fromRoom', 'true');
         window.location.href = 'end.html';
       });
     }
 
-    // ── iOS ──
+    // ── iOS — Safari нативно поддерживает HLS ──
     if (isIOS) {
       document.getElementById('video-container').style.display = 'none';
       document.getElementById('top-bar').style.display = 'none';
@@ -297,9 +297,7 @@
         watchdog = setInterval(() => {
           if (video.ended) { clearInterval(watchdog); return; }
           if (video.muted) { video.muted = false; video.volume = 1; }
-          if (video.paused && returnEntry.style.display === 'none') {
-            video.play().catch(() => {});
-          }
+          if (video.paused && returnEntry.style.display === 'none') video.play().catch(() => {});
         }, 1000);
       }
 
@@ -356,14 +354,9 @@
         const correct = getCorrectTime();
         if (correct > 0 && Math.abs(video.currentTime - correct) > 2) video.currentTime = correct;
       });
-
       video.addEventListener('volumechange', () => {
-        if (video.muted && !video.ended) {
-          video.muted = false;
-          video.volume = 1;
-        }
+        if (video.muted && !video.ended) { video.muted = false; video.volume = 1; }
       });
-
       video.addEventListener('ended', () => {
         stopWatchdog();
         sessionStorage.setItem('fromRoom', 'true');
