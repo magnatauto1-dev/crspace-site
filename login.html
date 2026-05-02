@@ -75,12 +75,22 @@
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     document.getElementById('intro-source').src = isMobile ? VERTICAL_VIDEO : HORIZONTAL_VIDEO;
 
-    if (!tgUser && !isInsideTelegram) {
+    // Пробуем получить userId из initData если tgUser недоступен
+    let userId = tgUser?.id;
+    if (!userId && tg.initData) {
+      try {
+        const params = new URLSearchParams(tg.initData);
+        const userStr = params.get('user');
+        if (userStr) userId = JSON.parse(decodeURIComponent(userStr)).id;
+      } catch (e) {}
+    }
+
+    if (!isInsideTelegram) {
       document.getElementById('status-screen').style.display = 'flex';
       document.getElementById('error-msg').style.display = 'block';
       document.getElementById('error-msg').textContent = 'Откройте через Telegram бот @cr_space_bot';
     } else {
-      if (tgUser) sessionStorage.setItem('tg_user_id', String(tgUser.id));
+      if (userId) sessionStorage.setItem('tg_user_id', String(userId));
       const introScreen = document.getElementById('intro-screen');
       const video = document.getElementById('intro-video');
       video.load();
