@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CR Space</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -84,7 +85,22 @@
   <button class="music-btn pulsing" id="music-btn" onclick="toggleMusic()">♪ включить музыку</button>
 
   <script type="module">
-    const userId = sessionStorage.getItem('tg_user_id');
+    let userId = sessionStorage.getItem('tg_user_id');
+    if (!userId) {
+      // Пробуем получить userId напрямую из Telegram WebApp
+      const tg = window.Telegram?.WebApp;
+      if (tg) {
+        let uid = tg.initDataUnsafe?.user?.id;
+        if (!uid && tg.initData) {
+          try {
+            const params = new URLSearchParams(tg.initData);
+            const userStr = params.get('user');
+            if (userStr) uid = JSON.parse(decodeURIComponent(userStr)).id;
+          } catch (e) {}
+        }
+        if (uid) { userId = String(uid); sessionStorage.setItem('tg_user_id', userId); }
+      }
+    }
     if (!userId) { window.location.href = 'login.html'; }
 
     const music = document.getElementById('bg-music');
