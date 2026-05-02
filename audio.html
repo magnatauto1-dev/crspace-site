@@ -241,6 +241,20 @@
       }
     });
 
+    // Автовозобновление при зависании (AirPods switch, network stall)
+    let _finishing = false;
+    const _origFinish = window.finishPractice;
+    window.finishPractice = async function() { _finishing = true; await _origFinish(); };
+
+    audio.addEventListener('stalled', () => {
+      if (_finishing) return;
+      setTimeout(() => { if (!_finishing) audio.play().catch(() => {}); }, 1000);
+    });
+    audio.addEventListener('waiting', () => {
+      if (_finishing) return;
+      setTimeout(() => { if (!_finishing) audio.play().catch(() => {}); }, 1500);
+    });
+
     audio.addEventListener('ended', () => {
       sessionStorage.setItem('fromRoom', 'true');
       window.location.href = 'end.html';
