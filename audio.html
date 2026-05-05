@@ -97,6 +97,19 @@
     }
     .back-btn:hover { opacity: 1; }
 
+    .play-btn {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      border: 1.5px solid #4a7c7e;
+      background: transparent;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 48px;
+      transition: opacity 0.3s ease;
+    }
+    .play-btn:hover { opacity: 0.7; }
+    .play-btn svg { fill: #4a7c7e; }
+
     .slogan {
       font-size: 11px;
       color: #4a7c7e;
@@ -134,6 +147,10 @@
       <span id="time-total">00:00</span>
     </div>
   </div>
+
+  <button class="play-btn" id="play-btn" onclick="togglePlay()">
+    <svg id="play-icon" width="22" height="22" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+  </button>
 
   <div class="slogan">calm · inspire · run</div>
 
@@ -241,19 +258,72 @@
       }
     });
 
-    // Автовозобновление при зависании (AirPods switch, network stall)
+    // Флаги состояния
     let _finishing = false;
+    let _manuallyPaused = false;
     const _origFinish = window.finishPractice;
     window.finishPractice = async function() { _finishing = true; await _origFinish(); };
 
+    // Иконки Play/Pause
+    const ICON_PLAY = '<path d="M8 5v14l11-7z"/>';
+    const ICON_PAUSE = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+
+    function updatePlayBtn(playing) {
+      const icon = document.getElementById('play-icon');
+      if (icon) icon.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+    }
+
+    window.togglePlay = function() {
+      if (audio.paused) {
+        _manuallyPaused = false;
+        audio.play().catch(() => {});
+      } else {
+        _manuallyPaused = true;
+        audio.pause();
+      }
+    };
+
+    audio.addEventListener('play', () => updatePlayBtn(true));
+    audio.addEventListener('pause', () => {
+      if (!_finishing) updatePlayBtn(false);
+    });
+
+    // Автовозобновление при зависании (AirPods switch, network stall)
     audio.addEventListener('stalled', () => {
-      if (_finishing) return;
-      setTimeout(() => { if (!_finishing) audio.play().catch(() => {}); }, 1000);
+      if (_finishing || _manuallyPaused) return;
+      setTimeout(() => { if (!_finishing && !_manuallyPaused) audio.play().catch(() => {}); }, 1000);
     });
     audio.addEventListener('waiting', () => {
-      if (_finishing) return;
-      setTimeout(() => { if (!_finishing) audio.play().catch(() => {}); }, 1500);
+      if (_finishing || _manuallyPaused) return;
+      setTimeout(() => { if (!_finishing && !_manuallyPaused) audio.play().catch(() => {}); }, 1500);
     });
+
+    // Возобновление при возврате из фона (разблокировка экрана на Android)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && audio.paused && !_finishing && !_manuallyPaused) {
+        audio.play().catch(() => {});
+      }
+    });
+
+    // Media Session API — контроль с экрана блокировки и наушников
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: 'Медитация в сопровождении',
+        artist: 'CR Space',
+        album: track === '40' ? '40 минут' : '25 минут'
+      });
+      navigator.mediaSession.setActionHandler('play', () => {
+        _manuallyPaused = false;
+        audio.play().catch(() => {});
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        _manuallyPaused = true;
+        audio.pause();
+      });
+      navigator.mediaSession.setActionHandler('stop', () => {
+        window.finishPractice();
+      });
+    }
 
     audio.addEventListener('ended', () => {
       sessionStorage.setItem('fromRoom', 'true');
