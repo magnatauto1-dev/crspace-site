@@ -144,6 +144,29 @@
 
     const HLS_SRC = 'https://vz-b520b635-2e5.b-cdn.net/62982d3e-5c90-4d41-9193-b2f633f00443/playlist.m3u8';
 
+    // ── РЕЖИМ ЛИЧНОЙ СЕССИИ ──────────────────────────────────────────
+    const _urlParams = new URLSearchParams(window.location.search);
+    const sessionMode = _urlParams.get('session') === '1';
+    const sessionTs = sessionMode ? parseInt(_urlParams.get('ts') || '0') : 0;
+
+    if (sessionMode && sessionTs) {
+      const timeUntil = sessionTs - Date.now();
+      if (timeUntil > 15 * 60 * 1000) {
+        const st = new Date(sessionTs);
+        const hh = String(st.getHours()).padStart(2, '0');
+        const mm = String(st.getMinutes()).padStart(2, '0');
+        document.body.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+            height:100vh;background:#0f0f1a;color:white;font-family:-apple-system,sans-serif;text-align:center;padding:24px;">
+            <img src="logo.png" style="width:72px;margin-bottom:32px;opacity:0.9;">
+            <p style="font-size:16px;margin:0 0 12px;opacity:0.7;">Практика начнётся в</p>
+            <p style="font-size:56px;font-weight:700;margin:0 0 12px;letter-spacing:2px;">${hh}:${mm}</p>
+            <p style="font-size:13px;opacity:0.45;">по Испании</p>
+          </div>`;
+      }
+    }
+    // ────────────────────────────────────────────────────────────────
+
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
     const isMobile = isIOS || isAndroid;
@@ -164,6 +187,9 @@
     }
 
     function getCorrectTime() {
+      if (sessionMode && sessionTs) {
+        return Math.max(0, Math.floor((Date.now() - sessionTs) / 1000));
+      }
       const now = new Date();
       const total = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
       const morning = MORNING_HOUR * 3600;
