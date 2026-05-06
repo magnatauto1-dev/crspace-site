@@ -188,7 +188,11 @@
 
     function getCorrectTime() {
       if (sessionMode && sessionTs) {
-        return Math.max(0, Math.floor((Date.now() - sessionTs) / 1000));
+        const elapsed = Math.floor((Date.now() - sessionTs) / 1000);
+        if (elapsed <= 0) return 0;
+        const GRACE = 10 * 60; // 10 минут grace period
+        if (elapsed <= GRACE) return 0; // опоздал до 10 мин → с начала
+        return elapsed - GRACE; // опоздал больше 10 мин → минус 10 мин
       }
       const now = new Date();
       const total = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
