@@ -88,24 +88,31 @@
       } catch (e) {}
     }
 
+    const _redirectTo = new URLSearchParams(window.location.search).get('redirect') || 'index.html';
+
     if (!isInsideTelegram) {
       document.getElementById('status-screen').style.display = 'flex';
       document.getElementById('error-msg').style.display = 'block';
       document.getElementById('error-msg').textContent = 'Откройте через Telegram бот @cr_space_bot';
     } else {
       if (userId) sessionStorage.setItem('tg_user_id', String(userId));
-      const introScreen = document.getElementById('intro-screen');
-      const video = document.getElementById('intro-video');
-      video.load();
-      introScreen.style.display = 'flex';
-      video.play().catch(() => { window.location.href = 'index.html'; });
-      video.addEventListener('ended', () => {
-        introScreen.classList.add('fade-out');
-        setTimeout(() => { window.location.href = 'index.html'; }, 300);
-      });
-      setTimeout(() => {
-        if (!video.ended) { window.location.href = 'index.html'; }
-      }, 15000);
+      if (_redirectTo !== 'index.html') {
+        // Прямой редирект на нужную страницу (например room.html?session=1&ts=...)
+        window.location.href = _redirectTo;
+      } else {
+        const introScreen = document.getElementById('intro-screen');
+        const video = document.getElementById('intro-video');
+        video.load();
+        introScreen.style.display = 'flex';
+        video.play().catch(() => { window.location.href = 'index.html'; });
+        video.addEventListener('ended', () => {
+          introScreen.classList.add('fade-out');
+          setTimeout(() => { window.location.href = 'index.html'; }, 300);
+        });
+        setTimeout(() => {
+          if (!video.ended) { window.location.href = 'index.html'; }
+        }, 15000);
+      }
     }
   </script>
 </body>
