@@ -157,14 +157,17 @@
       const _SESSION_DURATION = 60 * 60; // 60 мин
       const _GRACE = 10 * 60;            // 10 мин grace
 
+      const _screenStyle = `display:flex;flex-direction:column;align-items:center;justify-content:center;
+        height:100vh;background:#f5f7f7;color:#2c4a4c;
+        font-family:'Montserrat',sans-serif;text-align:center;padding:40px 24px;`;
+
       // Сессия истекла — прошло больше 70 мин с начала
       if (_elapsed > _SESSION_DURATION + _GRACE) {
         document.body.innerHTML = `
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-            height:100vh;background:#0f0f1a;color:white;font-family:-apple-system,sans-serif;text-align:center;padding:24px;">
-            <img src="logo.png" style="width:72px;margin-bottom:32px;opacity:0.45;">
-            <p style="font-size:15px;margin:0 0 16px;opacity:0.55;letter-spacing:1px;">Практика завершилась</p>
-            <p style="font-size:11px;opacity:0.3;letter-spacing:3px;text-transform:uppercase;">жду тебя на следующей 🙏</p>
+          <div style="${_screenStyle}">
+            <img src="logo.png" style="width:72px;margin-bottom:40px;opacity:0.9;">
+            <p style="font-size:13px;letter-spacing:3px;text-transform:uppercase;margin:0 0 16px;">Практика завершилась</p>
+            <p style="font-size:11px;color:#4a7c7e;letter-spacing:2px;opacity:0.7;">жду тебя на следующей 🙏</p>
           </div>`;
         _sessionScreenShown = true;
       }
@@ -176,12 +179,11 @@
         const hh = String(st.getHours()).padStart(2, '0');
         const mm = String(st.getMinutes()).padStart(2, '0');
         document.body.innerHTML = `
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-            height:100vh;background:#0f0f1a;color:white;font-family:-apple-system,sans-serif;text-align:center;padding:24px;">
-            <img src="logo.png" style="width:72px;margin-bottom:32px;opacity:0.9;">
-            <p style="font-size:16px;margin:0 0 12px;opacity:0.7;">Практика начнётся в</p>
-            <p style="font-size:56px;font-weight:700;margin:0 0 12px;letter-spacing:2px;">${hh}:${mm}</p>
-            <p style="font-size:13px;opacity:0.45;">по Испании</p>
+          <div style="${_screenStyle}">
+            <img src="logo.png" style="width:72px;margin-bottom:40px;opacity:0.9;">
+            <p style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#4a7c7e;opacity:0.7;margin:0 0 20px;">Практика начнётся в</p>
+            <p style="font-size:48px;font-weight:300;letter-spacing:4px;margin:0 0 16px;">${hh}:${mm}</p>
+            <p style="font-size:11px;color:#4a7c7e;letter-spacing:3px;opacity:0.5;text-transform:uppercase;">по Испании</p>
           </div>`;
         setTimeout(() => window.location.reload(), _timeUntil);
         _sessionScreenShown = true;
