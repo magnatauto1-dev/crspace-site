@@ -90,12 +90,9 @@
       animation-delay: 13s;
     }
 
-    /* Кнопка завершить — в потоке, снизу по центру через fixed */
+    /* Кнопка завершить — в потоке, под слоганом */
     .finish-btn {
-      position: fixed;
-      bottom: 32px;
-      left: 50%;
-      transform: translateX(-50%);
+      margin-top: 48px;
       font-family: 'Montserrat', sans-serif;
       font-size: 10px;
       letter-spacing: 3px;
@@ -111,11 +108,11 @@
     }
     .finish-btn:hover { opacity: 0.7; border-color: #4a7c7e; }
 
-    /* Музыка — вверху справа, не конфликтует с кнопкой */
+    /* Музыка — остаётся внизу справа */
     .music-btn {
       position: fixed;
-      top: 24px;
-      right: 24px;
+      bottom: 24px;
+      right: 32px;
       background: transparent;
       border: none;
       color: #4a7c7e;
@@ -124,21 +121,21 @@
       letter-spacing: 3px;
       text-transform: uppercase;
       cursor: pointer;
-      opacity: 0.6;
+      opacity: 0.7;
       transition: opacity 0.3s ease;
     }
     .music-btn:hover { opacity: 1; }
 
     @media (max-width: 480px) {
-      body { padding: 60px 20px 96px; }
+      body { padding: 60px 20px 80px; }
       .logo-wrapper { width: 120px; height: 120px; margin-bottom: 40px; }
       .breath-ring { width: 120px; height: 120px; }
       .logo-wrapper img { width: 68px; height: 68px; }
       .message { margin-bottom: 36px; }
       .message p { font-size: 13px; margin-bottom: 14px; }
       .message p.accent { font-size: 16px; margin-bottom: 24px; }
-      .music-btn { top: 16px; right: 16px; font-size: 9px; }
-      .finish-btn { bottom: 24px; font-size: 9px; padding: 12px 28px; }
+      .finish-btn { margin-top: 36px; font-size: 9px; padding: 12px 28px; }
+      .music-btn { bottom: 16px; right: 20px; font-size: 9px; }
     }
   </style>
 </head>
