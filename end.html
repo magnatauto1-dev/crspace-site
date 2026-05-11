@@ -18,16 +18,17 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 40px 20px;
+      padding: 80px 20px 100px;
       opacity: 0;
       animation: fadeIn 1.5s ease forwards;
     }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
     .logo-wrapper {
       position: relative;
       width: 160px;
       height: 160px;
-      margin: 0 auto 48px;
+      margin: 0 auto 56px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -52,9 +53,10 @@
       height: 90px;
       object-fit: contain;
     }
+
     .message {
       max-width: 420px;
-      margin-bottom: 32px;
+      margin-bottom: 48px;
     }
     .message p {
       font-size: 15px;
@@ -70,12 +72,13 @@
       font-size: 18px;
       letter-spacing: 3px;
       font-weight: 400;
-      margin-bottom: 32px;
+      margin-bottom: 36px;
       animation-delay: 1s;
     }
     .message p:nth-child(2) { animation-delay: 4s; }
     .message p:nth-child(3) { animation-delay: 7s; }
     .message p:nth-child(4) { animation-delay: 10s; }
+
     .slogan {
       font-size: 11px;
       color: #4a7c7e;
@@ -86,9 +89,11 @@
       animation: fadeIn 1.5s ease forwards;
       animation-delay: 13s;
     }
+
+    /* Кнопка завершить — в потоке, снизу по центру через fixed */
     .finish-btn {
       position: fixed;
-      bottom: 24px;
+      bottom: 32px;
       left: 50%;
       transform: translateX(-50%);
       font-family: 'Montserrat', sans-serif;
@@ -105,10 +110,12 @@
       transition: opacity 0.3s ease, border-color 0.3s ease;
     }
     .finish-btn:hover { opacity: 0.7; border-color: #4a7c7e; }
+
+    /* Музыка — вверху справа, не конфликтует с кнопкой */
     .music-btn {
       position: fixed;
-      bottom: 24px;
-      right: 32px;
+      top: 24px;
+      right: 24px;
       background: transparent;
       border: none;
       color: #4a7c7e;
@@ -117,41 +124,21 @@
       letter-spacing: 3px;
       text-transform: uppercase;
       cursor: pointer;
-      opacity: 0.7;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
     }
     .music-btn:hover { opacity: 1; }
 
     @media (max-width: 480px) {
-      .logo-wrapper { width: 120px; height: 120px; margin-bottom: 24px; }
+      body { padding: 60px 20px 96px; }
+      .logo-wrapper { width: 120px; height: 120px; margin-bottom: 40px; }
       .breath-ring { width: 120px; height: 120px; }
       .logo-wrapper img { width: 68px; height: 68px; }
+      .message { margin-bottom: 36px; }
       .message p { font-size: 13px; margin-bottom: 14px; }
-      .message p.accent { font-size: 16px; margin-bottom: 20px; }
-      .music-btn { bottom: 16px; right: 20px; font-size: 9px; }
-    }
-
-    @media (max-height: 500px) and (orientation: landscape) {
-      body {
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        gap: 40px;
-        padding: 20px 40px;
-      }
-      .logo-wrapper { width: 100px; height: 100px; margin: 0; flex-shrink: 0; }
-      .breath-ring { width: 100px; height: 100px; }
-      .logo-wrapper img { width: 58px; height: 58px; }
-      .content-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
-      }
-      .message { margin-bottom: 16px; }
-      .message p { font-size: 12px; margin-bottom: 10px; }
-      .message p.accent { font-size: 14px; margin-bottom: 16px; }
-      .slogan { font-size: 10px; }
-      .music-btn { bottom: 12px; right: 16px; font-size: 9px; }
+      .message p.accent { font-size: 16px; margin-bottom: 24px; }
+      .music-btn { top: 16px; right: 16px; font-size: 9px; }
+      .finish-btn { bottom: 24px; font-size: 9px; padding: 12px 28px; }
     }
   </style>
 </head>
