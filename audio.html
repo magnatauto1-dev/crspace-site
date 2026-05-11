@@ -177,6 +177,7 @@
 
     const params = new URLSearchParams(window.location.search);
     const track = params.get('track');
+    sessionStorage.setItem('current_track', track || '25');
 
     const tracks = {
       '25': { src: 'https://vz-b520b635-2e5.b-cdn.net/72fa54fd-0137-46b9-857a-911d1bb064d5/playlist.m3u8' },
@@ -234,11 +235,18 @@
       }
     }
 
-    // Логируем старт медитации
+    // Логируем старт медитации (для практик-лога)
     fetch('https://crspace-bot-production.up.railway.app/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, type: track === '40' ? 'meditation_40' : 'meditation_25' })
+    }).catch(() => {});
+
+    // Сохраняем pending — чтобы бот спросил даже если нажали "Закрыть"
+    fetch('https://crspace-bot-production.up.railway.app/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, type: 'meditation_start', track: track || '25' })
     }).catch(() => {});
 
     initAudio(selected.src);

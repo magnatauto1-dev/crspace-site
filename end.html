@@ -86,6 +86,25 @@
       animation: fadeIn 1.5s ease forwards;
       animation-delay: 13s;
     }
+    .finish-btn {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #4a7c7e;
+      background: none;
+      border: 1.5px solid rgba(74, 124, 126, 0.5);
+      border-radius: 28px;
+      padding: 13px 36px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.3s ease, border-color 0.3s ease;
+    }
+    .finish-btn:hover { opacity: 0.7; border-color: #4a7c7e; }
     .music-btn {
       position: fixed;
       bottom: 24px;
@@ -137,6 +156,7 @@
   </style>
 </head>
 <body>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <audio id="bg-music" loop><source src="music.mp3" type="audio/mp3"></audio>
 
   <div class="logo-wrapper">
@@ -154,8 +174,30 @@
     <div class="slogan">calm · inspire · run</div>
   </div>
 
+  <button class="finish-btn" id="finish-btn" onclick="finishPractice()">Завершить практику</button>
   <button class="music-btn" id="music-btn" onclick="toggleMusic()">♪ выключить музыку</button>
 
+  <script>
+    // Завершить практику с end.html
+    window.finishPractice = async function() {
+      const userId = sessionStorage.getItem('tg_user_id');
+      const track = sessionStorage.getItem('current_track') || '25';
+      if (userId) {
+        try {
+          await fetch('https://crspace-bot-production.up.railway.app/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, type: 'meditation_done', track })
+          });
+        } catch (e) {}
+      }
+      if (window.Telegram?.WebApp?.close) {
+        window.Telegram.WebApp.close();
+      } else {
+        history.back();
+      }
+    };
+  </script>
   <script>
     const music = document.getElementById('bg-music');
     const btn = document.getElementById('music-btn');
