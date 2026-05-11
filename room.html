@@ -149,9 +149,29 @@
     const sessionMode = _urlParams.get('session') === '1';
     const sessionTs = sessionMode ? parseInt(_urlParams.get('ts') || '0') : 0;
 
+    let _sessionScreenShown = false;
+
     if (sessionMode && sessionTs) {
-      const timeUntil = sessionTs - Date.now();
-      if (timeUntil > 15 * 60 * 1000) {
+      const _now = Date.now();
+      const _elapsed = Math.floor((_now - sessionTs) / 1000);
+      const _SESSION_DURATION = 60 * 60; // 60 мин
+      const _GRACE = 10 * 60;            // 10 мин grace
+
+      // Сессия истекла — прошло больше 70 мин с начала
+      if (_elapsed > _SESSION_DURATION + _GRACE) {
+        document.body.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+            height:100vh;background:#0f0f1a;color:white;font-family:-apple-system,sans-serif;text-align:center;padding:24px;">
+            <img src="logo.png" style="width:72px;margin-bottom:32px;opacity:0.45;">
+            <p style="font-size:15px;margin:0 0 16px;opacity:0.55;letter-spacing:1px;">Практика завершилась</p>
+            <p style="font-size:11px;opacity:0.3;letter-spacing:3px;text-transform:uppercase;">жду тебя на следующей 🙏</p>
+          </div>`;
+        _sessionScreenShown = true;
+      }
+
+      // Слишком рано — больше 15 мин до начала → экран ожидания + авто-запуск
+      const _timeUntil = sessionTs - _now;
+      if (!_sessionScreenShown && _timeUntil > 15 * 60 * 1000) {
         const st = new Date(sessionTs);
         const hh = String(st.getHours()).padStart(2, '0');
         const mm = String(st.getMinutes()).padStart(2, '0');
@@ -163,6 +183,8 @@
             <p style="font-size:56px;font-weight:700;margin:0 0 12px;letter-spacing:2px;">${hh}:${mm}</p>
             <p style="font-size:13px;opacity:0.45;">по Испании</p>
           </div>`;
+        setTimeout(() => window.location.reload(), _timeUntil);
+        _sessionScreenShown = true;
       }
     }
     // ────────────────────────────────────────────────────────────────
@@ -215,7 +237,7 @@
     }
 
     // ── ДЕСКТОП ──
-    if (!isMobile) {
+    if (!isMobile && !_sessionScreenShown) {
       logVideoEntry();
       const video = document.getElementById('session-video');
       const container = document.getElementById('video-container');
@@ -241,7 +263,7 @@
     }
 
     // ── ANDROID ──
-    if (isAndroid) {
+    if (isAndroid && !_sessionScreenShown) {
       document.getElementById('video-container').style.display = 'none';
       document.getElementById('top-bar').style.display = 'none';
       document.getElementById('mobile-entry').style.display = 'flex';
@@ -311,7 +333,7 @@
     }
 
     // ── iOS — Safari нативно поддерживает HLS ──
-    if (isIOS) {
+    if (isIOS && !_sessionScreenShown) {
       document.getElementById('video-container').style.display = 'none';
       document.getElementById('top-bar').style.display = 'none';
       document.getElementById('mobile-entry').style.display = 'flex';
