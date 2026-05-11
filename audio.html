@@ -36,6 +36,9 @@
       border-radius: 50%;
       border: 1.5px solid #4a7c7e;
       animation: breathe 6s ease-in-out infinite;
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
     @keyframes breathe {
       0%, 100% { transform: scale(1); opacity: 0.6; }
@@ -44,6 +47,8 @@
     .logo-wrapper img {
       position: relative; z-index: 1;
       width: 90px; height: 90px; object-fit: contain;
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
 
     .practice-title {
