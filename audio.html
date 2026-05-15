@@ -19,6 +19,8 @@
       justify-content: center;
       text-align: center;
       padding: 40px 20px;
+      padding-bottom: max(40px, env(safe-area-inset-bottom));
+      overflow-y: auto;
       opacity: 0;
       animation: fadeIn 1.5s ease forwards;
     }
@@ -162,6 +164,13 @@
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script>
+    // Разворачиваем mini app на весь экран
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+  </script>
   <script type="module">
     // Берём userId из sessionStorage или из Telegram WebApp
     let userId = sessionStorage.getItem('tg_user_id');
