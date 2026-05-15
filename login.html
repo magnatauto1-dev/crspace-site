@@ -107,7 +107,8 @@
           });
         } catch (e) {}
       }
-      if (_redirectTo !== 'index.html') {
+      const _showIntro = new URLSearchParams(window.location.search).get('intro') === '1';
+      if (_redirectTo !== 'index.html' && !_showIntro) {
         // Прямой редирект на нужную страницу (например room.html?session=1&ts=...)
         window.location.href = _redirectTo;
       } else {
@@ -115,13 +116,14 @@
         const video = document.getElementById('intro-video');
         video.load();
         introScreen.style.display = 'flex';
-        video.play().catch(() => { window.location.href = 'index.html'; });
+        const _afterIntro = _redirectTo;
+        video.play().catch(() => { window.location.href = _afterIntro; });
         video.addEventListener('ended', () => {
           introScreen.classList.add('fade-out');
-          setTimeout(() => { window.location.href = 'index.html'; }, 300);
+          setTimeout(() => { window.location.href = _afterIntro; }, 300);
         });
         setTimeout(() => {
-          if (!video.ended) { window.location.href = 'index.html'; }
+          if (!video.ended) { window.location.href = _afterIntro; }
         }, 15000);
       }
     }
