@@ -95,7 +95,18 @@
       document.getElementById('error-msg').style.display = 'block';
       document.getElementById('error-msg').textContent = 'Откройте через Telegram бот @cr_space_bot';
     } else {
-      if (userId) sessionStorage.setItem('tg_user_id', String(userId));
+      if (userId) {
+        sessionStorage.setItem('tg_user_id', String(userId));
+        // Фиксируем timezone пользователя из браузера
+        try {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          fetch('https://crspace-bot-production.up.railway.app/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: String(userId), type: 'timezone_update', timezone: tz })
+          });
+        } catch (e) {}
+      }
       if (_redirectTo !== 'index.html') {
         // Прямой редирект на нужную страницу (например room.html?session=1&ts=...)
         window.location.href = _redirectTo;
