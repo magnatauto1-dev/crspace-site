@@ -162,11 +162,15 @@
   <button class="music-btn" id="music-btn" onclick="toggleMusic()">♪ выключить музыку</button>
 
   <script>
+    // Захватываем до того как музыкальный скрипт удалит из sessionStorage
+    const _cameFromRoom = sessionStorage.getItem('fromRoom') === 'true';
+
     // Завершить практику с end.html
     window.finishPractice = async function() {
       const userId = sessionStorage.getItem('tg_user_id');
       const track = sessionStorage.getItem('current_track') || '25';
-      if (userId) {
+      // Из room.html — чекин уже придёт через бот (afterCheckinSent cron), не дублируем
+      if (userId && !_cameFromRoom) {
         try {
           await fetch('https://crspace-bot-production.up.railway.app/log', {
             method: 'POST',

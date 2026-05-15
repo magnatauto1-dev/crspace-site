@@ -250,7 +250,7 @@
     fetch('https://crspace-bot-production.up.railway.app/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, type: track === '40' ? 'meditation_40' : 'meditation_25' })
+      body: JSON.stringify({ userId, type: track === '40' ? 'meditation_40' : track === '15' ? 'meditation_15' : 'meditation_25' })
     }).catch(() => {});
 
     // Сохраняем pending — чтобы бот спросил даже если нажали "Закрыть"
