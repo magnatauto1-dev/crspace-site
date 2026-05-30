@@ -198,6 +198,7 @@
     const params = new URLSearchParams(window.location.search);
     const track = params.get('track');
     sessionStorage.setItem('current_track', track || '25');
+    const RESUME_KEY = 'med_resume_' + (track || '25');
 
     const tracks = {
       '15': { src: 'https://vz-b520b635-2e5.b-cdn.net/5e6f3b07-bae1-4575-b4ee-aed1743ac7b2/playlist.m3u8' },
@@ -217,12 +218,14 @@
     let hlsInstance = null;
 
     window.goBack = function() {
+      localStorage.removeItem(RESUME_KEY);
       audio.pause();
       if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
       history.back();
     };
 
     window.finishPractice = async function() {
+      localStorage.removeItem(RESUME_KEY);
       audio.pause();
       if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
       try {
@@ -274,6 +277,11 @@
 
     audio.addEventListener('loadedmetadata', () => {
       document.getElementById('time-total').textContent = formatTime(audio.duration);
+      // Восстанавливаем позицию после прерывания (звонок, перезагрузка страницы)
+      const saved = parseInt(localStorage.getItem(RESUME_KEY) || '0');
+      if (saved > 5 && saved < audio.duration - 10) {
+        audio.currentTime = saved;
+      }
     });
 
     audio.addEventListener('timeupdate', () => {
@@ -282,6 +290,10 @@
         document.getElementById('progress-fill').style.width = pct + '%';
         document.getElementById('time-current').textContent = formatTime(audio.currentTime);
         audio._lastTime = audio.currentTime;
+        // Сохраняем позицию каждую секунду для восстановления после звонка
+        if (audio.currentTime > 5) {
+          localStorage.setItem(RESUME_KEY, Math.floor(audio.currentTime));
+        }
       }
     });
 
@@ -359,6 +371,7 @@
     }
 
     audio.addEventListener('ended', () => {
+      localStorage.removeItem(RESUME_KEY);
       sessionStorage.setItem('fromRoom', 'true');
       window.location.href = 'end.html';
     });
