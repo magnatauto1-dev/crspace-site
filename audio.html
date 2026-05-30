@@ -142,6 +142,10 @@
 
   <div class="practice-title">пространство внутри тебя</div>
 
+  <div id="dnd-hint" style="font-size:11px;letter-spacing:1.5px;color:#4a7c7e;opacity:0.6;text-transform:uppercase;margin:12px 0 0;transition:opacity 1.5s ease;">
+    🔕 поставь «не беспокоить»
+  </div>
+
   <div class="progress-wrap">
     <div class="progress-bar">
       <div class="progress-fill" id="progress-fill"></div>
@@ -272,6 +276,12 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, type: 'meditation_start', track: track || '25' })
     }).catch(() => {});
+
+    // Подсказка "не беспокоить" — исчезает через 15 секунд
+    setTimeout(() => {
+      const hint = document.getElementById('dnd-hint');
+      if (hint) hint.style.opacity = '0';
+    }, 15000);
 
     initAudio(selected.src);
 
