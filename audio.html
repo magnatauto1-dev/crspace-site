@@ -251,14 +251,11 @@
         hlsInstance = new Hls();
         hlsInstance.loadSource(src);
         hlsInstance.attachMedia(audio);
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-          audio.play().catch(() => {});
-        });
       } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
         // Safari нативно поддерживает HLS
         audio.src = src;
         audio.addEventListener('loadedmetadata', () => {
-          audio.play().catch(() => {});
+          // не автозапуск — ждём нажатия кнопки
         });
       }
     }
