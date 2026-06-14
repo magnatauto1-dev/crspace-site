@@ -100,7 +100,7 @@
         // Фиксируем timezone пользователя из браузера
         try {
           const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          fetch('https://app-production-9e7b.up.railway.app/log', {
+          fetch('https://crspace-app-production.up.railway.app/log', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: String(userId), type: 'timezone_update', timezone: tz })

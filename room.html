@@ -211,7 +211,7 @@
       try {
         const now = new Date();
         const session = now.getHours() < 12 ? 'morning' : 'evening';
-        await fetch('https://app-production-9e7b.up.railway.app/log', {
+        await fetch('https://crspace-app-production.up.railway.app/log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId, type: 'video_recording', session })

@@ -172,7 +172,7 @@
       // Из room.html — чекин уже придёт через бот (afterCheckinSent cron), не дублируем
       if (userId && !_cameFromRoom) {
         try {
-          await fetch('https://app-production-9e7b.up.railway.app/log', {
+          await fetch('https://crspace-app-production.up.railway.app/log', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, type: 'meditation_done', track })
