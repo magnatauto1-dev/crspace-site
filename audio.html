@@ -192,7 +192,7 @@
     // Обновляем timezone при каждом открытии
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      fetch('https://crspace-bot-production.up.railway.app/log', {
+      fetch('https://app-production-9e7b.up.railway.app/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, type: 'timezone_update', timezone: tz })
@@ -233,7 +233,7 @@
       audio.pause();
       if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
       try {
-        await fetch('https://crspace-bot-production.up.railway.app/log', {
+        await fetch('https://app-production-9e7b.up.railway.app/log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId, type: 'meditation_done', track })
@@ -261,14 +261,14 @@
     }
 
     // Логируем старт медитации (для практик-лога)
-    fetch('https://crspace-bot-production.up.railway.app/log', {
+    fetch('https://app-production-9e7b.up.railway.app/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, type: track === '40' ? 'meditation_40' : track === '15' ? 'meditation_15' : 'meditation_25' })
     }).catch(() => {});
 
     // Сохраняем pending — чтобы бот спросил даже если нажали "Закрыть"
-    fetch('https://crspace-bot-production.up.railway.app/log', {
+    fetch('https://app-production-9e7b.up.railway.app/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, type: 'meditation_start', track: track || '25' })
