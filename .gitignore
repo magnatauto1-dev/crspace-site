@@ -1,0 +1,16 @@
+# Секреты — никогда не коммитить
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials*.json
+*sa-key*.json
+*token*.json
+
+# Системный мусор
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc
