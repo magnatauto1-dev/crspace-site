@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>CR Space — Сессия</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; background: #000; font-family: 'Montserrat', sans-serif; }
+
+    .top-bar {
+      position: fixed; top: 0; width: 100%;
+      display: flex; align-items: center;
+      padding: 24px 40px; z-index: 10;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
+    }
+    .top-logo img { height: 48px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; }
+    #video-container { width: 100%; height: 100vh; position: relative; transition: opacity 1.5s ease; }
+    #video-container video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    #video-container.fade-out { opacity: 0; }
+
+    #mobile-entry, #return-entry {
+      display: none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 50;
+      flex-direction: column; align-items: center; justify-content: center; gap: 40px;
+    }
+    .rotate-icon { width: 80px; height: 80px; animation: rotateAnim 2s ease-in-out infinite; }
+    @keyframes rotateAnim {
+      0%   { transform: rotate(0deg); }
+      40%  { transform: rotate(-90deg); }
+      60%  { transform: rotate(-90deg); }
+      100% { transform: rotate(0deg); }
+    }
+    .rotate-icon svg { width: 80px; height: 80px; }
+    .entry-hint {
+      color: rgba(255,255,255,0.5);
+      font-size: 10px; letter-spacing: 4px;
+      text-transform: uppercase;
+      text-align: center; line-height: 2.2;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar" id="top-bar">
+    <div class="top-logo"><img src="logo.png" alt="CR Space"></div>
+  </div>
+  <div id="video-container">
+    <video id="session-video" playsinline webkit-playsinline>
+      <source src="https://vz-b520b635-2e5.b-cdn.net/a798993b-967a-44e4-9942-d7467fdc7e35/original" type="video/mp4">
+    </video>
+    <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></div>
+  </div>
+
+  <div id="mobile-entry">
+    <div class="rotate-icon">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <rect x="18" y="8" width="28" height="48" rx="4" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+        <circle cx="32" cy="50" r="2" fill="rgba(255,255,255,0.7)"/>
+        <path d="M20 28 L10 28 M10 28 L14 24 M10 28 L14 32" stroke="rgba(255,255,255,0.9)" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="entry-hint">поверни телефон<br>и коснись экрана</div>
+  </div>
+
+  <div id="return-entry">
+    <div class="rotate-icon">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <rect x="18" y="8" width="28" height="48" rx="4" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+        <circle cx="32" cy="50" r="2" fill="rgba(255,255,255,0.7)"/>
+        <path d="M20 28 L10 28 M10 28 L14 24 M10 28 L14 32" stroke="rgba(255,255,255,0.9)" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="entry-hint">коснись экрана<br>чтобы вернуться</div>
+  </div>
+
+  <video id="mobile-video" style="position:fixed;display:none;width:1px;height:1px;opacity:0;z-index:1;">
+    <source src="https://vz-b520b635-2e5.b-cdn.net/a798993b-967a-44e4-9942-d7467fdc7e35/original" type="video/mp4">
+  </video>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCeJzFMjr_r7gNrh1CW0RDmH9N2EwBLCxU",
+      authDomain: "crspase.firebaseapp.com",
+      projectId: "crspase",
+      storageBucket: "crspase.firebasestorage.app",
+      messagingSenderId: "153293486925",
+      appId: "1:153293486925:web:e2b64495eced034d591504"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Проверка авторизации
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      const docSnap = await getDoc(doc(db, "whitelist", user.email));
+      if (!docSnap.exists()) {
+        await auth.signOut();
+        window.location.href = 'login.html';
+      }
+    });
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    const MORNING_HOUR = 7;
+    const EVENING_HOUR = 20;
+
+    function getCorrectTime() {
+      const now = new Date();
+      const total = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      const morning = MORNING_HOUR * 3600;
+      const evening = EVENING_HOUR * 3600;
+      if (total >= morning && total < morning + 3600) return total - morning;
+      if (total >= evening && total < evening + 3600) return total - evening;
+      return 0;
+    }
+
+    if (!isMobile) {
+      const video = document.getElementById('session-video');
+      const container = document.getElementById('video-container');
+      video.addEventListener('loadedmetadata', () => {
+        video.currentTime = getCorrectTime();
+        video.muted = false;
+        video.play().catch(() => {});
+      });
+      video.addEventListener('seeking', () => {
+        const correct = getCorrectTime();
+        if (correct > 0 && Math.abs(video.currentTime - correct) > 2) video.currentTime = correct;
+      });
+      video.addEventListener('pause', () => {
+        if (!video.ended) video.play().catch(() => {});
+      });
+      video.addEventListener('ended', () => {
+        sessionStorage.setItem('fromRoom', 'true');
+        container.classList.add('fade-out');
+        setTimeout(() => { window.location.href = 'end.html'; }, 1500);
+      });
+    }
+
+    if (isMobile) {
+      document.getElementById('video-container').style.display = 'none';
+      document.getElementById('top-bar').style.display = 'none';
+      document.getElementById('mobile-entry').style.display = 'flex';
+
+      const video = document.getElementById('mobile-video');
+      const returnEntry = document.getElementById('return-entry');
+      let started = false;
+      let savedTime = 0;
+
+      function launchFullscreen() {
+        const correct = savedTime > 0 ? savedTime : getCorrectTime();
+        video.muted = false;
+        video.volume = 1;
+        video.style.display = 'block';
+        video.style.width = '1px';
+        video.style.height = '1px';
+        video.style.opacity = '0';
+        returnEntry.style.display = 'none';
+        document.getElementById('mobile-entry').style.display = 'none';
+
+        const doLaunch = () => {
+          video.currentTime = correct;
+          video.play().then(() => {
+            if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+          }).catch(() => {});
+        };
+
+        if (video.readyState >= 1) {
+          doLaunch();
+        } else {
+          video.addEventListener('loadedmetadata', doLaunch, { once: true });
+          video.load();
+        }
+      }
+
+      document.getElementById('mobile-entry').addEventListener('touchstart', () => {
+        if (started) return;
+        started = true;
+        launchFullscreen();
+      }, { once: true });
+
+      video.addEventListener('webkitendfullscreen', () => {
+        if (!video.ended) {
+          savedTime = video.currentTime;
+          video.pause();
+          returnEntry.style.display = 'flex';
+          returnEntry.addEventListener('touchstart', () => {
+            launchFullscreen();
+          }, { once: true });
+        }
+      });
+
+      video.addEventListener('seeking', () => {
+        const correct = savedTime > 0 ? savedTime : getCorrectTime();
+        if (correct > 0 && Math.abs(video.currentTime - correct) > 2) video.currentTime = correct;
+      });
+
+      video.addEventListener('volumechange', () => {
+        if (video.muted && !video.ended) {
+          video.muted = false;
+          video.volume = 1;
+        }
+      });
+
+      video.addEventListener('ended', () => {
+        sessionStorage.setItem('fromRoom', 'true');
+        window.location.href = 'end.html';
+      });
+    }
+  </script>
+</body>
+</html>

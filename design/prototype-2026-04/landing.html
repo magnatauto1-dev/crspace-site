@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CR Space — Работа с состоянием</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Playfair Display', 'Georgia', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            teal:      '#4d7c80',
+            'teal-dark': '#2e5c60',
+            'teal-deeper': '#1e4448',
+            'teal-mid': '#6a9598',
+            'teal-light': '#a8c8cb',
+            'teal-pale': '#daeef0',
+            'teal-ghost': '#f0f8f9',
+            stone:     '#f4f2ef',
+            'stone-mid': '#e8e4de',
+            charcoal:  '#1c2b2d',
+            muted:     '#7a9699',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body {
+      background: #f4f2ef;
+      color: #1c2b2d;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+    .teal-text {
+      color: #4d7c80;
+    }
+    .teal-gradient-text {
+      background: linear-gradient(135deg, #4d7c80 0%, #2e5c60 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .btn-primary {
+      background: #4d7c80;
+      color: #fff;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: all 0.25s ease;
+      display: inline-block;
+    }
+    .btn-primary:hover {
+      background: #2e5c60;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(46, 92, 96, 0.25);
+    }
+
+    .btn-outline {
+      border: 1.5px solid #4d7c80;
+      color: #4d7c80;
+      font-weight: 500;
+      transition: all 0.25s ease;
+      display: inline-block;
+    }
+    .btn-outline:hover {
+      background: #4d7c80;
+      color: #fff;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0dbd3;
+      border-radius: 16px;
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+    .card:hover {
+      box-shadow: 0 12px 40px rgba(46, 92, 96, 0.10);
+      transform: translateY(-3px);
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #4d7c80;
+      font-weight: 600;
+    }
+
+    nav { background: rgba(244, 242, 239, 0.92); backdrop-filter: blur(20px); }
+
+    .divider { width: 48px; height: 2px; background: #4d7c80; border-radius: 2px; opacity: 0.4; }
+
+    .highlight-block {
+      background: linear-gradient(135deg, #4d7c80 0%, #2e5c60 100%);
+      color: #fff;
+      border-radius: 20px;
+    }
+
+    .state-item { border-left: 2px solid #daeef0; padding-left: 16px; }
+    .state-item.active { border-color: #4d7c80; }
+
+    .check-item {
+      background: #f0f8f9;
+      border: 1px solid #c8e4e6;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .tag {
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: #daeef0;
+      color: #2e5c60;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="fixed top-0 left-0 right-0 z-50 px-6 py-4" style="border-bottom:1px solid rgba(77,124,128,0.12);">
+  <div class="max-w-6xl mx-auto flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <!-- Logo mark inline SVG (simplified CR shape) -->
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="5" r="3" fill="#4d7c80"/>
+        <path d="M8 16 C8 10 24 8 24 16 C24 22 10 24 10 16" stroke="#4d7c80" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <line x1="12" y1="22" x2="20" y2="10" stroke="#4d7c80" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <span style="font-family:'Inter',sans-serif; font-weight:700; font-size:1rem; letter-spacing:0.05em; color:#2e5c60;">CR SPACE</span>
+    </div>
+    <div class="hidden md:flex items-center gap-8 text-sm" style="color:#7a9699;">
+      <a href="#problem" class="hover:text-teal transition-colors" style="transition:color 0.2s">Проблема</a>
+      <a href="#method"  class="hover:text-teal transition-colors" style="transition:color 0.2s">Метод</a>
+      <a href="#results" class="hover:text-teal transition-colors" style="transition:color 0.2s">Результаты</a>
+      <a href="#pricing" class="hover:text-teal transition-colors" style="transition:color 0.2s">Форматы</a>
+      <a href="#cta" class="btn-primary px-5 py-2 rounded-full text-sm">Первая встреча</a>
+    </div>
+    <a href="#cta" class="md:hidden btn-primary px-4 py-2 rounded-full text-sm">Записаться</a>
+  </div>
+</nav>
+
+
+<!-- HERO -->
+<section class="min-h-screen flex items-center justify-center px-6 pt-28 pb-20 relative overflow-hidden">
+  <!-- Subtle background teal shapes -->
+  <div class="absolute inset-0 pointer-events-none overflow-hidden">
+    <div style="position:absolute;top:-120px;right:-180px;width:520px;height:520px;background:radial-gradient(circle,rgba(77,124,128,0.09) 0%,transparent 70%);border-radius:50%;"></div>
+    <div style="position:absolute;bottom:-80px;left:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(77,124,128,0.06) 0%,transparent 70%);border-radius:50%;"></div>
+  </div>
+
+  <div class="max-w-4xl mx-auto text-center relative z-10">
+    <div class="section-label mb-8 fade-up">Пространство работы с состоянием</div>
+
+    <h1 class="font-serif mb-6 fade-up" style="font-size:clamp(2.8rem,7vw,5.5rem); line-height:1.1; color:#1c2b2d; transition-delay:0.08s;">
+      Ясное состояние —<br />
+      <em style="color:#4d7c80;">это не подарок</em><br />
+      удачного дня.
+    </h1>
+
+    <p class="font-serif text-2xl md:text-3xl teal-gradient-text font-semibold mb-6 fade-up" style="transition-delay:0.16s;">
+      Это навык.
+    </p>
+
+    <p class="text-lg md:text-xl max-w-xl mx-auto leading-relaxed mb-12 fade-up" style="color:#5a7a7d; transition-delay:0.22s;">
+      Для тех, кто живёт в высоком темпе и хочет научиться в нём не теряться.
+    </p>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 fade-up" style="transition-delay:0.28s;">
+      <a href="#cta" class="btn-primary px-8 py-4 rounded-full text-base">Узнать о первой встрече →</a>
+      <a href="#method" class="btn-outline px-8 py-4 rounded-full text-base">Как это работает</a>
+    </div>
+
+    <div class="mt-20 flex items-center justify-center gap-3 text-sm fade-up" style="color:#a8c8cb; transition-delay:0.34s;">
+      <span style="width:36px;height:1px;background:#a8c8cb;display:inline-block;"></span>
+      <span>15+ лет в предпринимательстве · 5+ лет системной практики</span>
+      <span style="width:36px;height:1px;background:#a8c8cb;display:inline-block;"></span>
+    </div>
+  </div>
+</section>
+
+
+<!-- PROBLEM -->
+<section id="problem" style="background:#fff;" class="py-28 px-6">
+  <div class="max-w-5xl mx-auto">
+    <div class="section-label mb-5 fade-up">Что происходит внутри</div>
+    <h2 class="font-serif mb-4 leading-snug fade-up" style="font-size:clamp(2rem,4vw,3rem); color:#1c2b2d; transition-delay:0.08s;">
+      Справляешься или уже нет —<br />
+      <em style="color:#7a9699;">внутри происходит одно и то же.</em>
+    </h2>
+    <p class="mb-16 max-w-lg fade-up" style="color:#7a9699; transition-delay:0.14s;">
+      Дело не в силе воли и не в характере. Просто никто не учил тебя регулировать своё состояние.
+    </p>
+
+    <div class="grid md:grid-cols-3 gap-5">
+      <div class="card p-8 fade-up" style="transition-delay:0.1s;">
+        <div class="font-serif text-5xl teal-gradient-text mb-5 font-semibold">01</div>
+        <h3 class="font-semibold text-lg mb-3" style="color:#1c2b2d;">Ресурс не восстанавливается</h3>
+        <p style="color:#7a9699;" class="text-sm leading-relaxed">Ты отдыхаешь — но не отдыхаешь. Усталость стала фоном, из которого уже не выходишь.</p>
+      </div>
+      <div class="card p-8 fade-up" style="transition-delay:0.18s;">
+        <div class="font-serif text-5xl teal-gradient-text mb-5 font-semibold">02</div>
+        <h3 class="font-semibold text-lg mb-3" style="color:#1c2b2d;">Тело держит напряжение</h3>
+        <p style="color:#7a9699;" class="text-sm leading-relaxed">Стресс накапливается в спине, шее, груди. Ты перестал замечать, насколько это стало нормой.</p>
+      </div>
+      <div class="card p-8 fade-up" style="transition-delay:0.26s;">
+        <div class="font-serif text-5xl teal-gradient-text mb-5 font-semibold">03</div>
+        <h3 class="font-semibold text-lg mb-3" style="color:#1c2b2d;">Нет опоры внутри</h3>
+        <p style="color:#7a9699;" class="text-sm leading-relaxed">Хочется ясности и устойчивости — но они зависят от обстоятельств, а не от тебя.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- WHY PRACTICES FAIL -->
+<section class="py-28 px-6" style="background:#f4f2ef;">
+  <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+    <div>
+      <div class="section-label mb-5 fade-up">Почему не получается</div>
+      <h2 class="font-serif mb-8 leading-snug fade-up" style="font-size:clamp(2rem,4vw,3rem); color:#1c2b2d; transition-delay:0.08s;">
+        Информация есть.<br />
+        <em style="color:#7a9699;">Навыка нет.</em>
+      </h2>
+      <div class="space-y-5 text-sm leading-relaxed fade-up" style="color:#7a9699; transition-delay:0.16s;">
+        <p>Ты, возможно, читал про осознанность, стресс, медитацию. Может быть, был на ретрите или практиковал какое-то время.</p>
+        <p>Потом вернулся — в бизнес, в семью, в задачи, в телефон. И практика начала распадаться.</p>
+        <p style="color:#2e5c60;">Не потому что ты безвольный. А потому что не было <strong style="color:#4d7c80;">среды, ритма и понятной формы</strong>, которая помогает возвращаться в это состояние снова и снова.</p>
+      </div>
+    </div>
+
+    <!-- State map -->
+    <div class="card p-8 fade-up" style="transition-delay:0.2s;">
+      <p class="section-label mb-7">Карта состояний</p>
+      <div class="space-y-3">
+
+        <div style="background:linear-gradient(135deg,#4d7c80,#2e5c60);color:#fff;border-radius:10px;padding:14px 18px;">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-semibold">Ясное состояние</div>
+              <div style="font-size:0.72rem;opacity:0.75;margin-top:2px;">Спокойный ум · лёгкое тело · точные решения</div>
+            </div>
+            <span style="font-size:0.65rem;background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:20px;">цель</span>
+          </div>
+        </div>
+
+        <div class="flex justify-center" style="color:#a8c8cb;font-size:12px;">↑</div>
+
+        <div style="background:#f0f8f9;border:1px solid #c8e4e6;border-radius:10px;padding:12px 18px;">
+          <div class="text-sm font-medium" style="color:#2e5c60;">Расслабление</div>
+          <div style="font-size:0.72rem;color:#7a9699;margin-top:2px;">Восстановление нервной системы</div>
+        </div>
+
+        <div class="flex justify-center" style="color:#c8d8d8;font-size:12px;">↑</div>
+
+        <div style="background:#f9f7f4;border:1.5px solid #e0dbd3;border-radius:10px;padding:12px 18px;">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium" style="color:#4a6a6d;">Напряжение</div>
+              <div style="font-size:0.72rem;color:#7a9699;margin-top:2px;">Обычный уровень стресса</div>
+            </div>
+            <span style="font-size:0.6rem;background:#daeef0;color:#4d7c80;border:1px solid #a8c8cb;padding:2px 8px;border-radius:20px;white-space:nowrap;">большинство здесь</span>
+          </div>
+        </div>
+
+        <div class="flex justify-center" style="color:#c8d8d8;font-size:12px;">↓</div>
+
+        <div style="background:#fdf4f4;border:1px solid #f0d8d8;border-radius:10px;padding:12px 18px;">
+          <div class="text-sm font-medium" style="color:#8a5a5a;">Хроническое напряжение</div>
+          <div style="font-size:0.72rem;color:#a08080;margin-top:2px;">Перегруз воспринимается как норма</div>
+        </div>
+
+        <div class="flex justify-center" style="color:#d8c0c0;font-size:12px;">↓</div>
+
+        <div style="background:#fdf0f0;border:1px solid #f0cccc;border-radius:10px;padding:12px 18px;">
+          <div class="text-sm" style="color:#a07070;">Истощение</div>
+          <div style="font-size:0.72rem;color:#b09090;margin-top:2px;">Апатия · потеря смысла · выключение</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- WHAT IS CR SPACE -->
+<section id="method" style="background:#fff;" class="py-28 px-6">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-20">
+      <div class="section-label mb-5 fade-up">Что такое CR Space</div>
+      <h2 class="font-serif mb-5 leading-tight fade-up" style="font-size:clamp(2.2rem,5vw,3.8rem); color:#1c2b2d; transition-delay:0.08s;">
+        Это не курс<br />
+        <em style="color:#7a9699;">по медитации.</em>
+      </h2>
+      <p style="color:#7a9699;" class="text-lg max-w-xl mx-auto fade-up" style="transition-delay:0.16s;">
+        Это среда, в которой ты учишься регулировать своё состояние.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-px" style="background:#e0dbd3;border-radius:20px;overflow:hidden;">
+      <div class="fade-up" style="background:#fff;padding:36px 28px;transition-delay:0.1s;">
+        <div class="tag mb-4">01 / Снаружи</div>
+        <h3 class="font-serif text-xl mb-3" style="color:#1c2b2d;">Мне стало легче.</h3>
+        <p style="color:#7a9699;" class="text-sm leading-relaxed">Ты приходишь за облегчением — и получаешь его уже на первой встрече.</p>
+      </div>
+      <div class="fade-up" style="background:#f0f8f9;padding:36px 28px;transition-delay:0.18s;border-left:1px solid #c8e4e6;border-right:1px solid #c8e4e6;">
+        <div class="tag mb-4">02 / Внутри</div>
+        <h3 class="font-serif text-xl mb-3" style="color:#1c2b2d;">Я понимаю, как этим управлять.</h3>
+        <p style="color:#5a7a7d;" class="text-sm leading-relaxed">Ты получаешь навык — умение возвращать себя в состояние снова и снова.</p>
+      </div>
+      <div class="fade-up" style="background:#fff;padding:36px 28px;transition-delay:0.26s;">
+        <div class="tag mb-4">03 / Глубинно</div>
+        <h3 class="font-serif text-xl mb-3" style="color:#1c2b2d;">Это меняет мой способ жить.</h3>
+        <p style="color:#7a9699;" class="text-sm leading-relaxed">Когда практика становится образом жизни — глубинная трансформация.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- 4 DIRECTIONS -->
+<section class="py-28 px-6" style="background:#f4f2ef;">
+  <div class="max-w-5xl mx-auto">
+    <div class="section-label mb-5 fade-up">Как устроена работа</div>
+    <h2 class="font-serif mb-16 fade-up" style="font-size:clamp(2rem,4vw,3rem); color:#1c2b2d; transition-delay:0.08s;">
+      Четыре направления практики
+    </h2>
+
+    <div class="grid md:grid-cols-2 gap-5">
+      <div class="card p-7 flex gap-5 fade-up" style="transition-delay:0.1s;">
+        <div style="width:46px;height:46px;min-width:46px;background:#daeef0;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#2e5c60;font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;">1</div>
+        <div>
+          <h3 class="font-semibold mb-2" style="color:#1c2b2d;">Осознанный образ жизни</h3>
+          <p style="color:#7a9699;" class="text-sm leading-relaxed">Состояние формируется не только на коврике — через мышление, речь, действия и решения каждый день.</p>
+        </div>
+      </div>
+
+      <div class="card p-7 flex gap-5 fade-up" style="transition-delay:0.18s;">
+        <div style="width:46px;height:46px;min-width:46px;background:#daeef0;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#2e5c60;font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;">2</div>
+        <div>
+          <h3 class="font-semibold mb-2" style="color:#1c2b2d;">Работа с телом</h3>
+          <p style="color:#7a9699;" class="text-sm leading-relaxed">Стресс живёт в теле. Ты учишься замечать нарастание перегруза до того, как оно становится кризисом.</p>
+        </div>
+      </div>
+
+      <div class="card p-7 flex gap-5 fade-up" style="transition-delay:0.26s;">
+        <div style="width:46px;height:46px;min-width:46px;background:#daeef0;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#2e5c60;font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;">3</div>
+        <div>
+          <h3 class="font-semibold mb-2" style="color:#1c2b2d;">Медитация концентрации</h3>
+          <p style="color:#7a9699;" class="text-sm leading-relaxed">Развитие способности удерживать внимание. Ум перестаёт скакать. Появляется внутренняя собранность.</p>
+        </div>
+      </div>
+
+      <div class="card p-7 flex gap-5 fade-up" style="transition-delay:0.34s;">
+        <div style="width:46px;height:46px;min-width:46px;background:#daeef0;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#2e5c60;font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;">4</div>
+        <div>
+          <h3 class="font-semibold mb-2" style="color:#1c2b2d;">Медитация наблюдения</h3>
+          <p style="color:#7a9699;" class="text-sm leading-relaxed">Ты замечаешь, как возникают ощущения, реакции, импульсы. Уходит автоматизм. Появляется выбор.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- RESULTS -->
+<section id="results" style="background:#fff;" class="py-28 px-6">
+  <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-start">
+    <div>
+      <div class="section-label mb-5 fade-up">Что меняется</div>
+      <h2 class="font-serif mb-6 leading-snug fade-up" style="font-size:clamp(2rem,4vw,3rem); color:#1c2b2d; transition-delay:0.08s;">
+        Конкретные<br />изменения.
+      </h2>
+      <p style="color:#7a9699;" class="leading-relaxed text-sm fade-up" style="transition-delay:0.16s;">
+        Это работает не потому что красиво звучит. Это работает физиологически — через конкретное переключение нервной системы.
+      </p>
+
+      <div class="mt-10 fade-up" style="background:linear-gradient(135deg,#4d7c80,#2e5c60);border-radius:16px;padding:28px;color:#fff;transition-delay:0.22s;">
+        <p class="text-xs uppercase tracking-widest mb-5" style="opacity:0.7;">Физиология перемен</p>
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center gap-3"><span style="opacity:0.6;">↓</span> Снижается уровень возбуждения</div>
+          <div class="flex items-center gap-3"><span style="opacity:0.6;">↓</span> Уменьшается хронический мышечный тонус</div>
+          <div class="flex items-center gap-3 font-semibold"><span>↑</span> Включается восстановительный режим</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-3 fade-up" style="transition-delay:0.2s;">
+      <div class="check-item">
+        <span style="color:#4d7c80;font-size:1rem;flex-shrink:0;margin-top:1px;">✓</span>
+        <span style="color:#2e5c60;" class="text-sm leading-relaxed">Меньше внутреннего шума и больше ясности в голове</span>
+      </div>
+      <div class="check-item">
+        <span style="color:#4d7c80;font-size:1rem;flex-shrink:0;margin-top:1px;">✓</span>
+        <span style="color:#2e5c60;" class="text-sm leading-relaxed">Тело перестаёт быть источником постоянного фонового напряжения</span>
+      </div>
+      <div class="check-item">
+        <span style="color:#4d7c80;font-size:1rem;flex-shrink:0;margin-top:1px;">✓</span>
+        <span style="color:#2e5c60;" class="text-sm leading-relaxed">Реакции становятся осознаннее, решения — точнее</span>
+      </div>
+      <div class="check-item">
+        <span style="color:#4d7c80;font-size:1rem;flex-shrink:0;margin-top:1px;">✓</span>
+        <span style="color:#2e5c60;" class="text-sm leading-relaxed">Появляется ощущение внутренней устойчивости, не зависящей от внешних обстоятельств</span>
+      </div>
+      <div class="check-item">
+        <span style="color:#4d7c80;font-size:1rem;flex-shrink:0;margin-top:1px;">✓</span>
+        <span style="color:#2e5c60;" class="text-sm leading-relaxed">Практика перестаёт распадаться — потому что есть среда и ритм</span>
+      </div>
+
+      <div class="mt-4 p-5" style="background:#f9f7f4;border-radius:12px;border:1px solid #e0dbd3;">
+        <p class="text-xs leading-relaxed" style="color:#7a9699;">
+          Метод CR Space объединяет современное понимание нервной системы и многовековые практики — <strong style="color:#4d7c80;">без религиозного языка, без лишней эзотерики.</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ABOUT -->
+<section class="py-28 px-6" style="background:#f4f2ef;">
+  <div class="max-w-5xl mx-auto grid md:grid-cols-5 gap-12 items-start">
+    <div class="md:col-span-2 space-y-5 fade-up">
+      <div class="card p-7 text-center">
+        <div class="font-serif teal-gradient-text font-semibold" style="font-size:3.5rem;">15+</div>
+        <div style="color:#7a9699;" class="text-sm mt-1">лет в предпринимательстве</div>
+      </div>
+      <div class="card p-7 text-center">
+        <div class="font-serif teal-gradient-text font-semibold" style="font-size:3.5rem;">5+</div>
+        <div style="color:#7a9699;" class="text-sm mt-1">лет системной работы с состоянием</div>
+      </div>
+    </div>
+
+    <div class="md:col-span-3 fade-up" style="transition-delay:0.2s;">
+      <div class="section-label mb-5">Кто я</div>
+      <h2 class="font-serif mb-8 leading-snug" style="font-size:clamp(2rem,4vw,3rem); color:#1c2b2d;">
+        Этот путь пройден<br />
+        <em style="color:#7a9699;">в реальной жизни.</em>
+      </h2>
+      <div class="space-y-5 text-sm leading-relaxed" style="color:#7a9699;">
+        <p>Несколько лет назад накопленное напряжение привело к очень тяжёлым состояниям: хроническая перегрузка, внутренний обвал, апатия, депрессивные периоды.</p>
+        <p>Более пяти лет системной работы — через тело, внимание, практику, жизненные выборы, отказ от разрушительных паттернов.</p>
+        <p style="color:#2e5c60;font-size:0.9rem;">Я не гуру и не учитель в классическом смысле. Я проводник, который сам идёт этим путём — и делится работающей формой.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- PRICING -->
+<section id="pricing" style="background:#fff;" class="py-28 px-6">
+  <div class="max-w-5xl mx-auto">
+    <div class="section-label mb-5 fade-up text-center">Форматы</div>
+    <h2 class="font-serif mb-4 text-center fade-up" style="font-size:clamp(2rem,4vw,3rem); color:#1c2b2d; transition-delay:0.08s;">Как это устроено</h2>
+    <p style="color:#7a9699;" class="text-center mb-16 fade-up" style="transition-delay:0.14s;">Начни с одной встречи. Почувствуй — потом решишь.</p>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="card p-8 flex flex-col fade-up" style="transition-delay:0.1s;">
+        <div class="tag mb-5" style="align-self:flex-start;">Начало</div>
+        <h3 class="font-serif text-2xl mb-3" style="color:#1c2b2d;">Первая встреча</h3>
+        <div class="flex items-baseline gap-1 mb-6">
+          <span class="font-serif teal-gradient-text font-semibold" style="font-size:2.8rem;">150–200</span>
+          <span style="color:#a8c8cb;font-size:1.1rem;">€</span>
+        </div>
+        <p style="color:#7a9699;" class="text-sm leading-relaxed flex-1 mb-7">
+          Не вебинар, не пробный урок, не консультация. Полноценная первая сессия — ты почувствуешь практику и поймёшь, хочешь ли идти глубже.
+        </p>
+        <a href="#cta" class="btn-primary text-center py-3 px-6 rounded-full text-sm">Записаться</a>
+      </div>
+
+      <div class="flex flex-col fade-up" style="transition-delay:0.18s; background:linear-gradient(160deg,#4d7c80,#2e5c60); color:#fff; border-radius:16px; padding:32px; position:relative; box-shadow:0 16px 48px rgba(46,92,96,0.25);">
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#fff;color:#4d7c80;font-size:0.62rem;font-weight:700;letter-spacing:0.12em;padding:4px 14px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.1);">ОСНОВНОЙ ФОРМАТ</div>
+        <div class="tag mb-5" style="background:rgba(255,255,255,0.2);color:#fff;align-self:flex-start;">Глубокая работа</div>
+        <h3 class="font-serif text-2xl mb-3">Два месяца</h3>
+        <div class="flex items-baseline gap-1 mb-6">
+          <span style="opacity:0.7;font-size:0.9rem;margin-right:2px;">от</span>
+          <span class="font-serif font-semibold" style="font-size:2.8rem;">1 000</span>
+          <span style="opacity:0.7;font-size:1.1rem;">€</span>
+        </div>
+        <ul class="space-y-2.5 text-sm flex-1 mb-7" style="opacity:0.9;">
+          <li class="flex items-center gap-2"><span style="opacity:0.6;">—</span>8 личных встреч</li>
+          <li class="flex items-center gap-2"><span style="opacity:0.6;">—</span>12 групповых сессий</li>
+          <li class="flex items-center gap-2"><span style="opacity:0.6;">—</span>Доступ к Meditation Room</li>
+          <li class="flex items-center gap-2"><span style="opacity:0.6;">—</span>Постоянная среда, ритм и сопровождение</li>
+        </ul>
+        <a href="#cta" style="background:#fff;color:#2e5c60;font-weight:600;text-align:center;padding:12px 24px;border-radius:999px;font-size:0.875rem;display:block;transition:all 0.25s;">Обсудить формат</a>
+      </div>
+
+      <div class="card p-8 flex flex-col fade-up" style="transition-delay:0.26s;">
+        <div class="tag mb-5" style="align-self:flex-start;">Цифровая среда</div>
+        <h3 class="font-serif text-2xl mb-3" style="color:#1c2b2d;">Meditation Room</h3>
+        <div class="mb-6">
+          <span class="tag">Закрытый доступ</span>
+        </div>
+        <p style="color:#7a9699;" class="text-sm leading-relaxed flex-1 mb-7">
+          Закрытое цифровое пространство для регулярной практики. Утро. Вечер. Вход. Практика. Тишина. Выход.<br /><br />
+          Не ещё одно приложение — а место, которое настраивает тебя на состояние.
+        </p>
+        <a href="#cta" class="btn-outline text-center py-3 px-6 rounded-full text-sm">Узнать подробнее</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- WHO IT'S FOR -->
+<section class="py-28 px-6" style="background:#f4f2ef;">
+  <div class="max-w-5xl mx-auto">
+    <div class="section-label mb-5 fade-up text-center">Для кого</div>
+    <h2 class="font-serif mb-16 text-center fade-up" style="font-size:clamp(2rem,4vw,3rem); color:#1c2b2d; transition-delay:0.08s;">Это для тебя?</h2>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="card p-8 fade-up" style="transition-delay:0.1s;">
+        <div class="flex items-center gap-3 mb-7">
+          <div style="width:30px;height:30px;background:#daeef0;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#4d7c80;font-size:14px;">✓</div>
+          <span class="font-semibold" style="color:#1c2b2d;">Это для тебя, если:</span>
+        </div>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3 text-sm leading-relaxed" style="color:#5a7a7d;"><span style="color:#4d7c80;flex-shrink:0;margin-top:2px;">—</span>Ты живёшь в высоком темпе и внутренний ресурс не восстанавливается так, как раньше</li>
+          <li class="flex items-start gap-3 text-sm leading-relaxed" style="color:#5a7a7d;"><span style="color:#4d7c80;flex-shrink:0;margin-top:2px;">—</span>Ты уже пробовал медитацию или похожие практики, но они не прижились</li>
+          <li class="flex items-start gap-3 text-sm leading-relaxed" style="color:#5a7a7d;"><span style="color:#4d7c80;flex-shrink:0;margin-top:2px;">—</span>Хочешь выстроить реальный навык работы со своим состоянием</li>
+          <li class="flex items-start gap-3 text-sm leading-relaxed" style="color:#5a7a7d;"><span style="color:#4d7c80;flex-shrink:0;margin-top:2px;">—</span>Ценишь глубину и не хочешь идти в массовые курсы</li>
+          <li class="flex items-start gap-3 text-sm leading-relaxed" style="color:#5a7a7d;"><span style="color:#4d7c80;flex-shrink:0;margin-top:2px;">—</span>Готов вкладываться — временем, вниманием и деньгами</li>
+        </ul>
+      </div>
+
+      <div class="card p-8 fade-up" style="transition-delay:0.2s;">
+        <div class="flex items-center gap-3 mb-7">
+          <div style="width:30px;height:30px;background:#fdf0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#c08080;font-size:14px;">✕</div>
+          <span class="font-semibold" style="color:#1c2b2d;">Это не для тебя, если:</span>
+        </div>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3 text-sm leading-relaxed" style="color:#9a7a7a;"><span style="color:#c08080;flex-shrink:0;margin-top:2px;">✕</span>Ты ищешь быстрое решение или волшебную технику</li>
+          <li class="flex items-start gap-3 text-sm leading-relaxed" style="color:#9a7a7a;"><span style="color:#c08080;flex-shrink:0;margin-top:2px;">✕</span>Не готов к регулярной практике</li>
+          <li class="flex items-start gap-3 text-sm leading-relaxed" style="color:#9a7a7a;"><span style="color:#c08080;flex-shrink:0;margin-top:2px;">✕</span>Хочешь большую группу и дешёвый вход</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- FINAL CTA -->
+<section id="cta" class="py-32 px-6 relative overflow-hidden" style="background:linear-gradient(160deg,#2e5c60 0%,#1e4448 100%);">
+  <div class="absolute inset-0 pointer-events-none overflow-hidden">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:700px;background:radial-gradient(circle,rgba(255,255,255,0.05) 0%,transparent 70%);border-radius:50%;"></div>
+  </div>
+
+  <div class="max-w-3xl mx-auto text-center relative z-10" style="color:#fff;">
+    <div class="section-label mb-6 fade-up" style="color:rgba(255,255,255,0.5);">Первый шаг</div>
+    <h2 class="font-serif mb-5 leading-tight fade-up" style="font-size:clamp(2.5rem,6vw,4.5rem); transition-delay:0.08s;">
+      Начни с одной встречи.
+    </h2>
+    <p class="text-lg mb-4 leading-relaxed max-w-xl mx-auto fade-up" style="color:rgba(255,255,255,0.65); transition-delay:0.14s;">
+      Не нужно сразу решать, подходит ли тебе весь формат. Приди на первую сессию — почувствуй практику и состояние.
+    </p>
+    <p class="font-serif text-xl italic mb-12 fade-up" style="color:rgba(255,255,255,0.5); transition-delay:0.2s;">
+      Дальше сам поймёшь.
+    </p>
+    <div class="fade-up" style="transition-delay:0.26s;">
+      <a href="mailto:hello@crspace.com" style="background:#fff;color:#2e5c60;font-weight:600;font-size:1rem;padding:18px 40px;border-radius:999px;display:inline-block;transition:all 0.25s;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        Записаться на первую встречу →
+      </a>
+      <p class="mt-6 text-sm" style="color:rgba(255,255,255,0.4);">Ответю лично. Без автоворонок и продающих скриптов.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- FOOTER -->
+<footer class="py-8 px-6" style="background:#1e4448;border-top:1px solid rgba(255,255,255,0.06);">
+  <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <span style="font-family:'Inter',sans-serif;font-weight:700;letter-spacing:0.05em;color:rgba(255,255,255,0.7);font-size:0.95rem;">CR SPACE</span>
+    <p style="color:rgba(255,255,255,0.3);" class="text-sm">Пространство работы с состоянием человека</p>
+    <div class="flex gap-6 text-sm" style="color:rgba(255,255,255,0.35);">
+      <a href="#problem" style="transition:color 0.2s;" onmouseover="this.style.color='#a8c8cb'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">Метод</a>
+      <a href="#pricing" style="transition:color 0.2s;" onmouseover="this.style.color='#a8c8cb'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">Форматы</a>
+      <a href="#cta" style="transition:color 0.2s;" onmouseover="this.style.color='#a8c8cb'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">Контакт</a>
+    </div>
+  </div>
+</footer>
+
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
