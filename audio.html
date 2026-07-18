@@ -131,6 +131,7 @@
       .logo-wrapper img { width: 68px; height: 68px; }
       .progress-wrap { width: 200px; }
       .practice-title { font-size: 13px; text-transform: uppercase; }
+      #screen-hint { font-size: 10px; letter-spacing: 0.8px; max-width: 220px; margin: 10px auto 0; }
     }
   </style>
 </head>
@@ -144,6 +145,10 @@
 
   <div id="dnd-hint" style="font-size:11px;letter-spacing:1.5px;color:#4a7c7e;opacity:0.6;text-transform:uppercase;margin:12px 0 0;transition:opacity 1.5s ease;">
     🔕 поставь «не беспокоить»
+  </div>
+
+  <div id="screen-hint" style="font-size:11px;letter-spacing:1.5px;color:#4a7c7e;opacity:0.6;text-transform:uppercase;margin:8px 0 0;transition:opacity 1.5s ease;">
+    экран останется включён — практика не прервётся
   </div>
 
   <div class="progress-wrap">
@@ -164,7 +169,7 @@
 
   <div class="slogan">calm · inspire · run</div>
 
-  <audio id="audio-track" preload="auto"></audio>
+  <audio id="audio-track" preload="auto" playsinline webkit-playsinline></audio>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -221,9 +226,33 @@
 
     let hlsInstance = null;
 
+    // Wake Lock — держим экран включённым, пока идёт медитация.
+    // Экран гаснет по авто-таймауту телефона (медитируют с закрытыми глазами) —
+    // на Android это приводит к тому, что вкладка/WebView уходит в спящий режим
+    // и обрыву сетевых запросов HLS-сегментов; Wake Lock — основная защита от этого.
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      } catch (e) {
+        // NotAllowedError (нет пользовательского жеста, страница не видима и т.п.) — не критично
+      }
+    }
+
+    async function releaseWakeLock() {
+      if (wakeLock) {
+        try { await wakeLock.release(); } catch (e) {}
+        wakeLock = null;
+      }
+    }
+
     window.goBack = function() {
       localStorage.removeItem(RESUME_KEY);
       audio.pause();
+      releaseWakeLock();
       if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
       history.back();
     };
@@ -231,6 +260,7 @@
     window.finishPractice = async function() {
       localStorage.removeItem(RESUME_KEY);
       audio.pause();
+      releaseWakeLock();
       if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
       try {
         await fetch('https://crspace-app-production.up.railway.app/log', {
@@ -251,6 +281,23 @@
         hlsInstance = new Hls();
         hlsInstance.loadSource(src);
         hlsInstance.attachMedia(audio);
+        // Восстановление после фатальных ошибок HLS (сеть/буфер) — без этого
+        // одна ошибка сегмента после фона молча останавливает поток навсегда.
+        hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+          if (!data || !data.fatal) return;
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hlsInstance.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hlsInstance.recoverMediaError();
+              break;
+            default:
+              hlsInstance.destroy();
+              initAudio(src);
+              break;
+          }
+        });
       } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
         // Safari нативно поддерживает HLS
         audio.src = src;
@@ -335,9 +382,13 @@
       }
     };
 
-    audio.addEventListener('play', () => updatePlayBtn(true));
+    audio.addEventListener('play', () => {
+      updatePlayBtn(true);
+      requestWakeLock();
+    });
     audio.addEventListener('pause', () => {
       if (!_finishing) updatePlayBtn(false);
+      releaseWakeLock();
     });
 
     // Автовозобновление при зависании (AirPods switch, network stall)
@@ -352,8 +403,23 @@
 
     // Возобновление при возврате из фона (разблокировка экрана на Android)
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && audio.paused && !_finishing && !_manuallyPaused) {
-        audio.play().catch(() => {});
+      if (document.hidden) return;
+      // Wake Lock автоматически снимается браузером при уходе страницы из
+      // видимости (спецификация) — переполучаем его при возврате, если играем.
+      if (!audio.paused) {
+        requestWakeLock();
+        return;
+      }
+      if (!_finishing && !_manuallyPaused) {
+        // iOS может один раз отклонить play() из этого колбэка (не всегда
+        // считается «пользовательским жестом») — пробуем ещё раз через паузу.
+        audio.play().catch(() => {
+          setTimeout(() => {
+            if (!document.hidden && !_finishing && !_manuallyPaused) {
+              audio.play().catch(() => {});
+            }
+          }, 300);
+        });
       }
     });
 
