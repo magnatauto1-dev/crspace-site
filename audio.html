@@ -172,7 +172,6 @@
   <audio id="audio-track" preload="auto" playsinline webkit-playsinline></audio>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
     // Разворачиваем mini app на весь экран
     if (window.Telegram?.WebApp) {
@@ -214,10 +213,16 @@
     sessionStorage.setItem('current_track', track || '25');
     const RESUME_KEY = 'med_resume_' + (track || '25');
 
+    // Прогрессивный источник вместо HLS/MSE: MP4 fallback-рендиции Bunny Stream
+    // (те же исходники, что и playlist.m3u8, отданные напрямую файлом — не
+    // сегментами). Взята самая лёгкая рендиция (240p) — видеодорожка тут не
+    // используется (это аудио-медитации), совпадение размера файлов на разных
+    // рендициях (~30 vs ~37 МБ) говорит, что аудио-битрейт между ними не отличается,
+    // так что качество звука не теряется, а стартует и докачивается быстрее.
     const tracks = {
-      '15': { src: 'https://vz-b520b635-2e5.b-cdn.net/5e6f3b07-bae1-4575-b4ee-aed1743ac7b2/playlist.m3u8' },
-      '25': { src: 'https://vz-b520b635-2e5.b-cdn.net/72fa54fd-0137-46b9-857a-911d1bb064d5/playlist.m3u8' },
-      '40': { src: 'https://vz-b520b635-2e5.b-cdn.net/96783e22-1a80-4e28-b5a6-e8196ae65f33/playlist.m3u8' }
+      '15': { src: 'https://vz-b520b635-2e5.b-cdn.net/5e6f3b07-bae1-4575-b4ee-aed1743ac7b2/play_240p.mp4' },
+      '25': { src: 'https://vz-b520b635-2e5.b-cdn.net/72fa54fd-0137-46b9-857a-911d1bb064d5/play_240p.mp4' },
+      '40': { src: 'https://vz-b520b635-2e5.b-cdn.net/96783e22-1a80-4e28-b5a6-e8196ae65f33/play_240p.mp4' }
     };
 
     const selected = tracks[track] || tracks['25'];
@@ -228,8 +233,6 @@
       const s = Math.floor(sec % 60);
       return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
-
-    let hlsInstance = null;
 
     // Wake Lock — держим экран включённым, пока идёт медитация.
     // Экран гаснет по авто-таймауту телефона (медитируют с закрытыми глазами) —
@@ -258,7 +261,6 @@
       localStorage.removeItem(RESUME_KEY);
       audio.pause();
       releaseWakeLock();
-      if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
       history.back();
     };
 
@@ -266,7 +268,6 @@
       localStorage.removeItem(RESUME_KEY);
       audio.pause();
       releaseWakeLock();
-      if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
       try {
         await fetch('https://crspace-app-production.up.railway.app/log', {
           method: 'POST',
@@ -281,36 +282,30 @@
       }
     };
 
+    // Прогрессивный <audio src="...mp4">: сам браузер докачивает файл по мере
+    // проигрывания (обычный HTTP + Range, без MSE) — у обычного прогрессивного
+    // audio реальный шанс продолжать играть при заблокированном экране/в фоне,
+    // тогда как MSE (Hls.js) почти всегда останавливается в этом состоянии.
+    let _reloadAttempted = false;
     function initAudio(src) {
-      if (Hls.isSupported()) {
-        hlsInstance = new Hls();
-        hlsInstance.loadSource(src);
-        hlsInstance.attachMedia(audio);
-        // Восстановление после фатальных ошибок HLS (сеть/буфер) — без этого
-        // одна ошибка сегмента после фона молча останавливает поток навсегда.
-        hlsInstance.on(Hls.Events.ERROR, (event, data) => {
-          if (!data || !data.fatal) return;
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              hlsInstance.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              hlsInstance.recoverMediaError();
-              break;
-            default:
-              hlsInstance.destroy();
-              initAudio(src);
-              break;
-          }
-        });
-      } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari нативно поддерживает HLS
-        audio.src = src;
-        audio.addEventListener('loadedmetadata', () => {
-          // не автозапуск — ждём нажатия кнопки
-        });
-      }
+      _reloadAttempted = false;
+      audio.src = src;
+      audio.load();
     }
+
+    // Восстановление после фатальной ошибки декодирования/сети у самого
+    // <audio> (напр. CDN моргнул во время долгого фона) — один повтор через load().
+    audio.addEventListener('error', () => {
+      if (_reloadAttempted || _finishing) return;
+      _reloadAttempted = true;
+      const savedTime = audio.currentTime || parseInt(localStorage.getItem(RESUME_KEY) || '0');
+      audio.src = selected.src;
+      audio.load();
+      audio.addEventListener('loadedmetadata', () => {
+        if (savedTime > 0) audio.currentTime = savedTime;
+        if (!_manuallyPaused) audio.play().catch(() => {});
+      }, { once: true });
+    });
 
     // Логируем старт медитации (для практик-лога)
     fetch('https://crspace-app-production.up.railway.app/log', {
@@ -390,10 +385,12 @@
     audio.addEventListener('play', () => {
       updatePlayBtn(true);
       requestWakeLock();
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
     });
     audio.addEventListener('pause', () => {
       if (!_finishing) updatePlayBtn(false);
       releaseWakeLock();
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
     });
 
     // Автовозобновление при зависании (AirPods switch, network stall)
