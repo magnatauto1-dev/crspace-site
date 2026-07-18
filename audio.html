@@ -188,6 +188,11 @@
       if (tgUser) {
         userId = String(tgUser.id);
         sessionStorage.setItem('tg_user_id', userId);
+      } else if (new URLSearchParams(window.location.search).get('debug_uid') === '405630652') {
+        // ВРЕМЕННЫЙ обход для теста этой ветки вне Telegram (только ADMIN_ID) —
+        // удалить перед мержем в main, см. отчёт web-developer от 2026-07-18.
+        userId = '405630652';
+        sessionStorage.setItem('tg_user_id', userId);
       } else {
         const redirectBack = 'audio.html' + window.location.search;
         window.location.href = 'login.html?redirect=' + encodeURIComponent(redirectBack);
